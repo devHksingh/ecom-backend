@@ -3,8 +3,16 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import mongoSanitize from 'express-mongo-sanitize'
 import hpp from "hpp";
+import cors from "cors";
+import { config } from './config/config';
 
 const app = express()
+
+app.use(
+    cors({
+        origin: config.frontendDomain
+    })
+)
 
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true }))
