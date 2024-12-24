@@ -137,6 +137,8 @@ const logoutUser = async (req: Request, res: Response, next: NextFunction) => {
         const user = await User.findById({ _id }).select('-password')
         if (user) {
             user.isLogin = false
+            user.refreshToken=""
+            await user.save({ validateBeforeSave: false })
             res.status(201).json({ success: true, message: "User is successfully logout" })
         }
     } catch (error) {
@@ -169,9 +171,47 @@ const createAdmin = async (req: Request, res: Response, next: NextFunction) => {
             res.status(201).json({ success: true, message: "user is register", userId: user.id })
         }
     } catch (error) {
-
+        if (error instanceof z.ZodError) {
+            const err = createHttpError(401, { message: { type: "Validation error", zodError: error.errors } })
+            next(err)
+        } else {
+            const err = createHttpError(500, "Internal server error while creating admin")
+            next(err)
+        }
     }
 
+}
+
+const getAlluser = async (req: Request, res: Response, next: NextFunction) => {
+    const _req = req as AuthRequest
+    const { isAccessTokenExp, isLogin, email, _id } = _req
+    if (!isLogin) {
+        next(createHttpError(401, 'you are unauthorize for this request.Kindly login first'))
+    }
+    try {
+        const user = await User.findOne({ email }).select("-password")
+        if (user) {
+            if (user.role === "user") {
+                next(createHttpError(401, 'you are unauthorize for this request.'))
+            }else if(!user.isLogin){
+                next(createHttpError(401, 'You are logout!.Kindly login first'))
+            }
+            let newAccessToken
+            if(isAccessTokenExp){
+                newAccessToken= user.generateAccessToken()
+            }
+            const alluser = await User.find({ role: "user" }).select("-password")
+            res.status(200).json({
+                success: true,
+                alluser,
+                isAccessTokenExp,
+                accessToken:newAccessToken
+            })
+        }
+
+    } catch (error) {
+        next(createHttpError(500, 'unable to get all user info.'))
+    }
 }
 
 export {
@@ -179,5 +219,6 @@ export {
     loginUser,
     test,
     logoutUser,
-    createAdmin
+    createAdmin,
+    getAlluser
 }
