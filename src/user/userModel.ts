@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Users } from "./userTypes";
 import bcrypt from "bcryptjs";
+import { userAccessToken, userRefreshToken } from "../utils/genrateJwtToken";
 
 
 const userSchema = new mongoose.Schema<Users>({
@@ -67,6 +68,24 @@ userSchema.pre("save", async function (next) {
 // Compare password method
 userSchema.methods.comparePassword = async function (enteredPassword: string) {
     return await bcrypt.compare(enteredPassword, this.password)
+}
+
+userSchema.methods.generateAccessToken = function () {
+    const token = userAccessToken({
+        _id: this._id,
+        email: this.email,
+        isLogin: this.isLogin
+    })
+    return token
+}
+
+userSchema.methods.generateRefreshToken = function () {
+    const token = userRefreshToken({
+        _id: this._id,
+        email: this.email,
+        isLogin: this.isLogin
+    })
+    return token
 }
 
 export const User = mongoose.model('User', userSchema)
