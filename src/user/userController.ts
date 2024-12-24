@@ -46,6 +46,7 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
             const options = {
                 httpOnly: true,
                 secure: true,
+                maxAge: 4 * 24 * 60 * 60 * 1000 // 4days
             };
             res.status(201)
                 // .cookie("accessToken", `Bearer ${accessToken}`, options)
@@ -93,6 +94,7 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
             const options = {
                 httpOnly: true,
                 secure: true,
+                maxAge: 4 * 24 * 60 * 60 * 1000 // 4days
             };
             res.status(201)
                 .cookie("accessToken", accessToken, options)
@@ -106,7 +108,7 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
                 })
         } else {
             const err = createHttpError(401, "User does not exist")
-             next(err)
+            next(err)
         }
 
 

@@ -13,7 +13,8 @@ const app = express()
 
 app.use(
     cors({
-        origin: config.frontendDomain
+        origin: config.frontendDomain,
+        credentials: true
     })
 )
 
