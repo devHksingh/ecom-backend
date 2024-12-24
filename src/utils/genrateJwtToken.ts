@@ -23,10 +23,10 @@ const userAccessToken =  (payload: object) => {
     return token
     
 }
-const userRefreshToken =  (payload: any) => {
+const userRefreshToken =  (payload: object) => {
     console.log("userRefreshToken")
     const token = jwt.sign(
-        {payload},
+        payload,
         config.JWT_REFRESH_KEY as string,
         {
             algorithm: 'HS256',
