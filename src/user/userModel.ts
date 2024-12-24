@@ -74,7 +74,7 @@ userSchema.methods.generateAccessToken = function () {
     const token = userAccessToken({
         _id: this._id,
         email: this.email,
-        isLogin: this.isLogin
+        isLogin: true
     })
     return `Bearer ${token}`
 }
@@ -83,7 +83,7 @@ userSchema.methods.generateRefreshToken = function () {
     const token = userRefreshToken({
         _id: this._id,
         email: this.email,
-        isLogin: this.isLogin
+        isLogin: true
     })
     return `Bearer ${token}`
 }
