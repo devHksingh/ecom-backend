@@ -40,7 +40,19 @@ const userSchema = new mongoose.Schema<Users>({
             type: mongoose.Schema.Types.ObjectId,
             ref: "Product"
         }
-    ]
+    ],
+    refreshToken: {
+        type: String
+    },
+    isLogin: {
+        type: Boolean
+    },
+    address: {
+        type: String
+    },
+    cardNumber: {
+        type: String
+    }
 }, { timestamps: true })
 
 // Encrypt password before saving
@@ -52,7 +64,7 @@ userSchema.pre("save", async function (next) {
 })
 
 // Compare password method
-userSchema.methods.comparePassword = async function (enteredPassword:string) {
+userSchema.methods.comparePassword = async function (enteredPassword: string) {
     return await bcrypt.compare(enteredPassword, this.password)
 }
 
