@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema<Users>({
         type: String,
         required: [true, "Password is required"],
         minlength: [6, "Password must be at least 6 characters"],
-        select: false
+        // select: false
     },
     role: {
         type: String,
@@ -62,7 +62,7 @@ userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) {
         return next()
     }
-    this.password = await bcrypt.hash(this.password, 11)
+    this.password = await bcrypt.hash(this.password, 10)
 })
 
 // Compare password method
@@ -76,7 +76,7 @@ userSchema.methods.generateAccessToken = function () {
         email: this.email,
         isLogin: this.isLogin
     })
-    return token
+    return `Bearer ${token}`
 }
 
 userSchema.methods.generateRefreshToken = function () {
@@ -85,11 +85,12 @@ userSchema.methods.generateRefreshToken = function () {
         email: this.email,
         isLogin: this.isLogin
     })
-    return token
+    return `Bearer ${token}`
 }
 
-userSchema.methods.isPasswordCorrect= async function (password:string) {
-    return await bcrypt.compare(password,this.password)
+userSchema.methods.isPasswordCorrect = async function(password:string){
+    const result = await bcrypt.compare(password, this.password)
+    return result
 }
 
 export const User = mongoose.model('User', userSchema)
