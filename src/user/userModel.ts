@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
-import {  Users } from "./userTypes";
+import { Users } from "./userTypes";
+import bcrypt from "bcryptjs";
 
 
 const userSchema = new mongoose.Schema<Users>({
@@ -21,26 +22,38 @@ const userSchema = new mongoose.Schema<Users>({
         minlength: [6, "Password must be at least 6 characters"],
         select: false
     },
-    role:{
-        type:String,
-        enum:{
-            values:["admin","manager","user"],
-            message:"Please select a valid role",
+    role: {
+        type: String,
+        enum: {
+            values: ["admin", "manager", "user"],
+            message: "Please select a valid role",
         },
-        default:"user"
+        default: "user"
     },
-    phoneNumber:{
-        type:String,
-        trim:true,
-        maxlength:10
+    phoneNumber: {
+        type: String,
+        trim: true,
+        maxlength: 10
     },
-    purchasedIteams:[
+    purchasedIteams: [
         {
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"Product"
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product"
         }
     ]
 }, { timestamps: true })
 
+// Encrypt password before saving
+userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) {
+        return next()
+    }
+    this.password = await bcrypt.hash(this.password, 11)
+})
 
-export const User = mongoose.model('User',userSchema)
+// Compare password method
+userSchema.methods.comparePassword = async function (enteredPassword:string) {
+    return await bcrypt.compare(enteredPassword, this.password)
+}
+
+export const User = mongoose.model('User', userSchema)
