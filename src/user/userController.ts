@@ -65,7 +65,6 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const isValidUser = loginUserSchema.parse(req.body)
         const { email, password } = isValidUser
-        log(email, password)
         const user = await User.findOne({
             email
         })
@@ -146,33 +145,33 @@ const logoutUser = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
-const createAdmin = async(req:Request,res:Response,next: NextFunction)=>{
+const createAdmin = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const validateUser = createUserSchema.parse(req.body)
-        const {email,password,name}= validateUser
+        const { email, password, name } = validateUser
         // db call to check if user with admin is already there in db
-        const isuserWithAdminRole = await User.findOne({role:"admin"})
-        if(isuserWithAdminRole ){
-            next(createHttpError(401,"Already user register with admin role."))
+        const isuserWithAdminRole = await User.findOne({ role: "admin" })
+        if (isuserWithAdminRole) {
+            next(createHttpError(401, "Already user register with admin role."))
         }
-        const isvalidUser = await User.findOne({email})
-        if(isvalidUser){
-            next(createHttpError(401,"Already user register with this emailId."))
+        const isvalidUser = await User.findOne({ email })
+        if (isvalidUser) {
+            next(createHttpError(401, "Already user register with this emailId."))
         }
         const user = await User.create({
             name,
             email,
             password,
             isLogin: false,
-            role:"admin"
+            role: "admin"
         })
-        if(user){
+        if (user) {
             res.status(201).json({ success: true, message: "user is register", userId: user.id })
         }
     } catch (error) {
-        
+
     }
-    
+
 }
 
 export {
