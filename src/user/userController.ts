@@ -5,6 +5,7 @@ import createHttpError from "http-errors";
 import { userAccessToken, userRefreshToken } from "../utils/genrateJwtToken";
 import { z } from 'zod'
 import { log } from "console";
+import { AuthRequest } from "../middlewares/authMiddleware";
 
 
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
@@ -42,18 +43,11 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
 
         })
         if (newUser) {
-            //    cookie
-            const options = {
-                httpOnly: true,
-                secure: true,
-                maxAge: 4 * 24 * 60 * 60 * 1000 // 4days
-            };
-            res.status(201)
-                // .cookie("accessToken", `Bearer ${accessToken}`, options)
-                // .cookie("refreshToken", token, options)
-                .cookie("userId", newUser.id, options)
-                .cookie("isLogin", newUser.isLogin, options)
-                .json({ success: true, message: "user is register", userId: newUser.id })
+
+            res.status(201).json({ success: true, message: "user is register", userId: newUser.id })
+
+
+
         }
     } catch (error) {
         if (error instanceof z.ZodError) {
@@ -76,6 +70,10 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
             email
         })
         if (user) {
+            if (user.isLogin) {
+                const err = createHttpError(401, "User is already login")
+                next(err)
+            }
             console.log(user)
             console.log(password)
             const isPasswordCorrect = await user.isPasswordCorrect(password)
@@ -91,15 +89,7 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
 
             user.isLogin = true
             await user.save({ validateBeforeSave: false })
-            const options = {
-                httpOnly: true,
-                secure: true,
-                maxAge: 4 * 24 * 60 * 60 * 1000 // 4days
-            };
             res.status(201)
-                .cookie("accessToken", accessToken, options)
-                .cookie("refreshToken", refreshToken, options)
-                .cookie("isLogin", user.isLogin, options)
                 .json({
                     success: true,
                     message: "User is login successfully",
@@ -124,7 +114,41 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
 
 }
 
+const test = async (req: Request, res: Response, next: NextFunction) => {
+    const _req = req as AuthRequest
+    const a = _req.email
+    // console.log(_req.isAccessTokenExp)
+    // console.log(_req.email)
+    // console.log(_req._id)
+    // console.log(_req.isLogin)
+    console.log(_req);
+
+    const { isAccessTokenExp, isLogin, email, _id } = _req
+    console.log(isAccessTokenExp, isLogin, email, _id);
+
+    res.status(201).json({ message: "done", a })
+
+}
+
+const logoutUser = async (req: Request, res: Response, next: NextFunction) => {
+    // const _req = req as AuthRequest
+    const _req = req as AuthRequest
+    const { _id, email, isLogin, isAccessTokenExp } = _req
+    try {
+        const user = await User.findById({ _id }).select('-password')
+        if (user) {
+            user.isLogin = false
+            res.status(201).json({ success: true, message: "User is successfully logout" })
+        }
+    } catch (error) {
+        const err = createHttpError(500, "Internal server error while logout user")
+        next(err)
+    }
+}
+
 export {
     createUser,
     loginUser,
+    test,
+    logoutUser,
 }
