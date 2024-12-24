@@ -6,36 +6,43 @@ import { config } from '../config/config'
 
 
 
-const userAccessToken =async (payload: object) => {
+const userAccessToken =  (payload: object) => {
     console.log("userAccessToken")
-    const token = await jwt.sign(
+    const token =  jwt.sign(
         payload,
         config.JWT_ACCESS_KEY as string,
         {
-            algorithm: 'RS256',
+            algorithm: 'HS256',
             expiresIn: config.JWT_ACCESS_EXP,
             issuer: config.JWT_ISSUER as string,
             audience: config.JWT_AUDIENCE as string,
             jwtid: uuidv4()
         }
     )
+    // console.log(token);
+    return token
+    
 }
-const userRefreshToken = async(payload:object)=>{
+const userRefreshToken =  (payload: any) => {
     console.log("userRefreshToken")
-    return await jwt.sign(
-        payload,
-        config.JWT_REFRESH_EXP as string,
+    const token = jwt.sign(
+        {payload},
+        config.JWT_REFRESH_KEY as string,
         {
-            algorithm: 'RS256',
-            expiresIn: config.JWT_ACCESS_EXP,
+            algorithm: 'HS256',
+            expiresIn: config.JWT_REFRESH_EXP,
             issuer: config.JWT_ISSUER as string,
             audience: config.JWT_AUDIENCE as string,
             jwtid: uuidv4()
         }
+
     )
+    // console.log(token);
+    
+    return token
 }
 
-export{
+export {
     userAccessToken,
     userRefreshToken
 }
