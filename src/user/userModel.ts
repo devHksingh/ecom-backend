@@ -45,7 +45,8 @@ const userSchema = new mongoose.Schema<Users>({
         type: String
     },
     isLogin: {
-        type: Boolean
+        type: Boolean,
+        default: false
     },
     address: {
         type: String
