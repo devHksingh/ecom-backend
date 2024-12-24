@@ -6,6 +6,7 @@ import hpp from "hpp";
 import cors from "cors";
 import { config } from './config/config';
 import globalErrorHandler from './middlewares/globalErrorHandler';
+import userRouter from './user/userRouter';
 
 
 const app = express()
@@ -39,6 +40,8 @@ app.get('/', (req, res, next) => {
         message: "Welcome to ecom app"
     })
 })
+
+app.use('/api/v1/users', userRouter)
 
 // Global error handler
 app.use(globalErrorHandler);
