@@ -3,11 +3,14 @@ export interface Users {
     name: string,
     email: string,
     password: string,
-    refreshToken: string,
+    refreshToken?: string,
     isLogin: boolean,
     role: string,
-    phoneNumber: string,
-    cardNumber: string,
-    address: string,
-    purchasedIteams: []
+    phoneNumber?: string,
+    cardNumber?: string,
+    address?: string,
+    purchasedIteams?: [],
+    isPasswordCorrect(password: string): Promise<boolean>;
+    generateAccessToken(): string;
+    generateRefreshToken(): string;
 }
