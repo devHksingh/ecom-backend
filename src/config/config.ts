@@ -6,6 +6,7 @@ const _config = {
     databaseUrl: process.env.MONGO_CONNECTION_STRING,
     env: process.env.NODE_ENV,
     JWT_ACCESS_KEY: process.env.JWT_ACCESS_KEY,
+    JWT_REFRESH_KEY: process.env.JWT_REFRESH_KEY,
     cloudinaryCloud: process.env.CLOUDINARY_CLOUD,
     cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
     cloudinarySecret: process.env.CLOUDINARY_API_SECRET,
