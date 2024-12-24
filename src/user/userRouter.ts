@@ -9,9 +9,11 @@ const userRouter = express.Router()
 
 userRouter.post("/register", createUser)
 userRouter.post('/login', loginUser)
-userRouter.post('/test',authenticate,test)
-userRouter.get('/logout',authenticate,logoutUser)
-userRouter.post('/admin/register',createAdmin)
+userRouter.post('/test', authenticate, test)
+userRouter.get('/logout', authenticate, logoutUser)
+userRouter.post('/admin/register', createAdmin)
+userRouter.post('/admin/login', loginUser)
+userRouter.get('/admin/logout', authenticate, logoutUser)
 
 
 export default userRouter
