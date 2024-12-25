@@ -113,21 +113,21 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
 
 }
 
-const test = async (req: Request, res: Response, next: NextFunction) => {
-    const _req = req as AuthRequest
-    const a = _req.email
-    // console.log(_req.isAccessTokenExp)
-    // console.log(_req.email)
-    // console.log(_req._id)
-    // console.log(_req.isLogin)
-    console.log(_req);
+// const test = async (req: Request, res: Response, next: NextFunction) => {
+//     const _req = req as AuthRequest
+//     const a = _req.email
+//     // console.log(_req.isAccessTokenExp)
+//     // console.log(_req.email)
+//     // console.log(_req._id)
+//     // console.log(_req.isLogin)
+//     console.log(_req);
 
-    const { isAccessTokenExp, isLogin, email, _id } = _req
-    console.log(isAccessTokenExp, isLogin, email, _id);
+//     const { isAccessTokenExp, isLogin, email, _id } = _req
+//     console.log(isAccessTokenExp, isLogin, email, _id);
 
-    res.status(201).json({ message: "done", a })
+//     res.status(201).json({ message: "done", a })
 
-}
+// }
 
 const logoutUser = async (req: Request, res: Response, next: NextFunction) => {
     // const _req = req as AuthRequest
@@ -137,7 +137,7 @@ const logoutUser = async (req: Request, res: Response, next: NextFunction) => {
         const user = await User.findById({ _id }).select('-password')
         if (user) {
             user.isLogin = false
-            user.refreshToken=""
+            user.refreshToken = ""
             await user.save({ validateBeforeSave: false })
             res.status(201).json({ success: true, message: "User is successfully logout" })
         }
@@ -193,19 +193,19 @@ const getAlluser = async (req: Request, res: Response, next: NextFunction) => {
         if (user) {
             if (user.role === "user") {
                 next(createHttpError(401, 'you are unauthorize for this request.'))
-            }else if(!user.isLogin){
+            } else if (!user.isLogin) {
                 next(createHttpError(401, 'You are logout!.Kindly login first'))
             }
             let newAccessToken
-            if(isAccessTokenExp){
-                newAccessToken= user.generateAccessToken()
+            if (isAccessTokenExp) {
+                newAccessToken = user.generateAccessToken()
             }
             const alluser = await User.find({ role: "user" }).select("-password")
             res.status(200).json({
                 success: true,
                 alluser,
                 isAccessTokenExp,
-                accessToken:newAccessToken
+                accessToken: newAccessToken
             })
         }
 
@@ -214,11 +214,55 @@ const getAlluser = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
+const createManager = async (req: Request, res: Response, next: NextFunction) => {
+    const _req = req as AuthRequest
+    const { _id, email, isLogin } = _req
+    try {
+        const isvalidUser = await User.findById({ _id })
+        if (isvalidUser) {
+            if (isvalidUser.role === "admin") {
+                if (!isvalidUser.isLogin) {
+                    next(createHttpError(401, "You are logout. Login it again!."))
+                }
+                const validateUser = createUserSchema.parse(req.body)
+                const { email, password, name } = validateUser
+                // check if already register in db
+                const isUserRegister = await User.findOne({ email })
+                if (isUserRegister) {
+                    next(createHttpError(401, "Manager is already register in DB."))
+                }
+                // creating user in db
+                const user = await User.create({
+                    email,
+                    isLogin: false,
+                    name,
+                    password,
+                    role: "manager"
+                })
+                if (user) {
+                    res.status(201).json({ success: true, message: "manager is register on db", userId: user.id })
+                }
+            } else {
+                next(createHttpError(401, "You are unauthorize for this request."))
+            }
+
+        }
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            const err = createHttpError(401, { message: { type: "Validation error", zodError: error.errors } })
+            next(err)
+        } else {
+            const err = createHttpError(500, "Internal server error while creating manager")
+            next(err)
+        }
+    }
+}
+
 export {
     createUser,
     loginUser,
-    test,
     logoutUser,
     createAdmin,
-    getAlluser
+    getAlluser,
+    createManager
 }
