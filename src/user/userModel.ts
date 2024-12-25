@@ -36,12 +36,12 @@ const userSchema = new mongoose.Schema<Users>({
         trim: true,
         maxlength: 10
     },
-    purchasedIteams: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Product"
-        }
-    ],
+    // purchasedIteams: [
+    //     {
+    //         type: mongoose.Schema.Types.ObjectId,
+    //         ref: "Product"
+    //     }
+    // ],
     refreshToken: {
         type: String
     },
