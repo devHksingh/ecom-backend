@@ -7,6 +7,7 @@ import cors from "cors";
 import { config } from './config/config';
 import globalErrorHandler from './middlewares/globalErrorHandler';
 import userRouter from './user/userRouter';
+import productRouter from './product/productRouter';
 
 
 const app = express()
@@ -43,6 +44,7 @@ app.get('/', (req, res, next) => {
 })
 
 app.use('/api/v1/users', userRouter)
+app.use('/api/v1/products',productRouter)
 
 // Global error handler
 app.use(globalErrorHandler);
