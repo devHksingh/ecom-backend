@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { createUserSchema, loginUserSchema } from "./userZodSchema";
+import { createUserSchema, loginUserSchema, logouUserSchema } from "./userZodSchema";
 import { User } from "./userModel";
 import createHttpError from "http-errors";
 import { userAccessToken, userRefreshToken } from "../utils/genrateJwtToken";
@@ -258,11 +258,34 @@ const createManager = async (req: Request, res: Response, next: NextFunction) =>
     }
 }
 
+const changePassword = async (req: Request, res: Response, next: NextFunction) => {
+    const _req = req as AuthRequest
+    const { _id, email, isLogin } = _req
+    try {
+        const validateUser = logouUserSchema.parse(req.body)
+        const { confirmPassword, password, oldPassword } = validateUser
+        const user = await User.findById({ _id })
+        if (user) {
+            const isPasswordCorrect = user.isPasswordCorrect(oldPassword)
+            if (!isPasswordCorrect) {
+                next(createHttpError(401, "Old password not correct"))
+            }
+            user.password = confirmPassword
+            user.save({ validateBeforeSave: false })
+            res.status(201).json({ success: true, message: "Password change successfully" })
+        }
+
+    } catch (error) {
+
+    }
+}
+
 export {
     createUser,
     loginUser,
     logoutUser,
     createAdmin,
     getAlluser,
-    createManager
+    createManager,
+    changePassword
 }
