@@ -123,28 +123,53 @@ const getAllProducts = async (req: Request, res: Response, next: NextFunction) =
     }
 }
 
+// const getProductByCategory = async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//         const { category } = req.body;
+
+//         // Validate category
+//         if (!category || typeof category !== "string") {
+//             return next(createHttpError(400, "Category is required and must be a string"));
+//         }
+
+//         // Query for products
+//         const products = await Product.find({ category: { $in: [category] } });
+
+//         // Check if products exist
+//         if (products.length > 0) {
+//             res.status(200).json({ success: true, products });
+//         } else {
+//             next(createHttpError(404, "No products found for the specified category"));
+//         }
+//     } catch (error) {
+//         next(createHttpError(500, "Unable to retrieve products"));
+//     }
+// };
+
+// Handling Array of Categories
 const getProductByCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { category } = req.body;
 
         // Validate category
-        if (!category || typeof category !== "string") {
-            return next(createHttpError(400, "Category is required and must be a string"));
+        if (!category || !Array.isArray(category) || category.length === 0) {
+            return next(createHttpError(400, "Category is required and must be a non-empty array"));
         }
 
         // Query for products
-        const products = await Product.find({ category: { $in: [category] } });
+        const products = await Product.find({ category: { $in: category } });
 
         // Check if products exist
         if (products.length > 0) {
             res.status(200).json({ success: true, products });
         } else {
-            next(createHttpError(404, "No products found for the specified category"));
+            next(createHttpError(404, "No products found for the specified categories"));
         }
     } catch (error) {
         next(createHttpError(500, "Unable to retrieve products"));
     }
 };
+
 
 
 
