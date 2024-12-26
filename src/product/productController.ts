@@ -170,11 +170,32 @@ const getProductByCategory = async (req: Request, res: Response, next: NextFunct
     }
 };
 
+const getSingleProduct = async (req: Request, res: Response, next: NextFunction) => {
+    const productId = req.params.productId
+    if (!productId) {
+        next(createHttpError(401, "ProductId is required"))
+    }
+    try {
+        const productDetail = await Product.findById({ _id: productId })
+        if (productId) {
+            res.status(201).json({
+                success: true, message: "Product fecth successfully",
+                productDetail: productDetail
+            }
+            )
+        } else {
+            next(createHttpError(404, "Product not found"))
+        }
+    } catch (error) {
+        next(createHttpError(500, "Error while getting product"))
+    }
+}
 
 
 
 export {
     createProduct,
     getAllProducts,
-    getProductByCategory
+    getProductByCategory,
+    getSingleProduct
 }
