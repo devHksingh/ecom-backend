@@ -111,5 +111,45 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
 
 }
 
+const getAllProducts = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const allProducts = await Product.find()
+        if (allProducts) {
+            res.status(201).json({ success: true, allProducts })
+        }
+    } catch (error) {
+        const err = createHttpError(500, "Internal server error while getting list of  product")
+        next(err)
+    }
+}
 
-export { createProduct }
+const getProductByCategory = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { category } = req.body;
+
+        // Validate category
+        if (!category || typeof category !== "string") {
+            return next(createHttpError(400, "Category is required and must be a string"));
+        }
+
+        // Query for products
+        const products = await Product.find({ category: { $in: [category] } });
+
+        // Check if products exist
+        if (products.length > 0) {
+            res.status(200).json({ success: true, products });
+        } else {
+            next(createHttpError(404, "No products found for the specified category"));
+        }
+    } catch (error) {
+        next(createHttpError(500, "Unable to retrieve products"));
+    }
+};
+
+
+
+export {
+    createProduct,
+    getAllProducts,
+    getProductByCategory
+}
