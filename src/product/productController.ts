@@ -7,7 +7,7 @@ import createHttpError from 'http-errors'
 import { Product } from './productModel'
 import { z } from 'zod'
 import { createProductSchema } from './productZodSchema'
-
+import fs from 'node:fs'
 
 const createProduct = async (req: Request, res: Response, next: NextFunction) => {
     // check req formate from zod
@@ -76,6 +76,13 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
                 console.log(typeof (optimizeUrl));
 
 
+            }
+            // delete temp file 
+            try {
+                await fs.promises.unlink(filePath)
+            } catch (error) {
+                console.log("Unable to delete local file");
+                
             }
 
             const newProduct = await Product.create({
@@ -194,8 +201,8 @@ const getSingleProduct = async (req: Request, res: Response, next: NextFunction)
 
 
 export {
-    createProduct,
-    getAllProducts,
-    getProductByCategory,
-    getSingleProduct
-}
+        createProduct,
+        getAllProducts,
+        getProductByCategory,
+        getSingleProduct
+    }
