@@ -8,6 +8,7 @@ import { Product } from './productModel'
 import { z } from 'zod'
 import { createProductSchema } from './productZodSchema'
 import fs from 'node:fs'
+import { log } from 'node:console'
 
 const createProduct = async (req: Request, res: Response, next: NextFunction) => {
     // check req formate from zod
@@ -82,7 +83,7 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
                 await fs.promises.unlink(filePath)
             } catch (error) {
                 console.log("Unable to delete local file");
-                
+
             }
 
             const newProduct = await Product.create({
@@ -198,11 +199,162 @@ const getSingleProduct = async (req: Request, res: Response, next: NextFunction)
     }
 }
 
+const updateProduct = async (req: Request, res: Response, next: NextFunction) => {
+    /*
+    Steps:
+    1. Get user ID from auth token and verify it.
+    2. Check if user role is admin or manager.
+    3. Get all updated text fields from req.body.
+    4. Get productId from params.
+    5. Verify product by its ID.
+    6. Check if there are any files in req.files. If present, upload them to Cloudinary.
+    7. Update all fields.
+    */
+    let optimizeUrl = '';
+    let accessToken = '';
+    const {
+        title,
+        brand,
+        category,
+        currency,
+        description,
+        price,
+        salePrice,
+        totalStock,
+    } = req.body;
+
+    const productId = req.params.productId;
+    console.log('Product ID:', productId);
+
+    // Extract user details from the request
+    const _req = req as AuthRequest;
+    const { _id, email, isLogin, isAccessTokenExp } = _req;
+
+    try {
+        // Step 1: Verify user
+        const isValidUser = await User.findById(_id);
+        if (!isValidUser) {
+            return next(createHttpError(401, 'Invalid user'));
+        }
+
+        // Step 2: Check if user is logged in
+        if (!isValidUser.isLogin) {
+            return next(createHttpError(401, 'You must log in first'));
+        }
+
+        // Step 3: Check user role
+        const userRole = isValidUser.role;
+        if (userRole !== 'admin' && userRole !== 'manager') {
+            return next(createHttpError(403, 'You are not authorized to update this product'));
+        }
+
+        // Step 4: Verify product
+        const productDetail = await Product.findById(productId);
+        if (!productDetail) {
+            return next(createHttpError(404, 'Product not found'));
+        }
+
+        // Step 5: Handle old image publicId
+        let oldPublicId = '';
+        if (productDetail.image) {
+            const img_url = productDetail.image.split('?')[0]; // Remove query parameters
+            const arr = img_url.split('/');
+            oldPublicId = `${arr.at(-2)}/${arr.at(-1)}`;
+            console.log('Old Image Public ID:', oldPublicId);
+        }
+
+        // Step 6: Handle new files (Cloudinary upload)
+        const newFiles = req.files as { [fieldname: string]: Express.Multer.File[] };
+        if (newFiles.prductImage) {
+            console.log(newFiles.prductImage);
+
+            // const file = newFiles.productImage[0];
+            const fileName = newFiles.prductImage[0].filename
+            const filePath = path.resolve(
+                __dirname,
+                "../../public/data/uploads",
+                fileName
+            )
+            // Upload the new image to Cloudinary
+
+            const cloudinaryResponse = await cloudinary.uploader.upload(filePath, {
+                filename_override: fileName,
+                folder: "products-image"
+            })
+            if (cloudinaryResponse) {
+                console.log(cloudinaryResponse["public_id"]);
+
+                const public_id = cloudinaryResponse["public_id"]
+                // Optimize delivery by resizing and applying auto-format and auto-quality
+                optimizeUrl = cloudinary.url(public_id, {
+                    transformation: [
+                        {
+                            width: "auto",
+                            crop: "fill",
+                            gravity: "auto"
+                        }, {
+                            dpr: "auto",
+                            fetch_format: 'auto',
+                            quality: 'auto',
+                        }
+                    ]
+                })
+                console.log(typeof (optimizeUrl));
+
+
+            }
+            // delete old img on cloudnary
+            await cloudinary.uploader.destroy(oldPublicId)
+            // delete temp file 
+            try {
+                await fs.promises.unlink(filePath)
+            } catch (error) {
+                console.log("Unable to delete local file");
+
+            }
+
+            console.log(optimizeUrl)
+        }
+
+
+        // Step 7: Update product fields
+        productDetail.title = title || productDetail.title;
+        productDetail.brand = brand || productDetail.brand;
+        productDetail.category = category || productDetail.category;
+        productDetail.currency = currency || productDetail.currency;
+        productDetail.description = description || productDetail.description;
+        productDetail.price = price || productDetail.price;
+        productDetail.salePrice = salePrice || productDetail.salePrice;
+        productDetail.totalStock = totalStock || productDetail.totalStock;
+        productDetail.image = optimizeUrl || productDetail.image;
+
+        // Save the updated product
+        await productDetail.save({ validateBeforeSave: false });
+
+        // Step 8: Handle access token expiration
+        if (isAccessTokenExp) {
+            accessToken = isValidUser.generateAccessToken();
+        }
+
+        // Respond with the updated product
+        res.status(200).json({
+            success: true,
+            message: 'Product updated successfully',
+            product: productDetail,
+            accessToken: isAccessTokenExp ? accessToken : undefined,
+        });
+    } catch (error) {
+        console.error('Error updating product:', error);
+        return next(createHttpError(500, 'Internal server error while updating product'));
+    }
+};
+
 
 
 export {
-        createProduct,
-        getAllProducts,
-        getProductByCategory,
-        getSingleProduct
-    }
+    createProduct,
+    getAllProducts,
+    getProductByCategory,
+    getSingleProduct,
+    updateProduct
+}
