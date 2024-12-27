@@ -1,57 +1,79 @@
 import { NextFunction, Request, Response } from "express";
 import createHttpError from "http-errors";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 import { config } from "../config/config";
 
 export interface AuthRequest extends Request {
-    _id: string,
-    email: string,
-    isLogin: boolean,
-    isAccessTokenExp: boolean
+    _id: string;
+    email: string;
+    isLogin: boolean;
+    isAccessTokenExp: boolean;
 }
 
+// Helper function to extract and verify a token
+const verifyToken = (token: string, secret: string) => {
+    try {
+        return jwt.verify(token, secret);
+    } catch (err) {
+        throw err;
+    }
+};
 
 const authenticate = (req: Request, res: Response, next: NextFunction) => {
-    const token = req.header('Authorization')
-    if (!token) {
-        return next(createHttpError(401, "Auth token is required"))
+    const authHeader = req.header("Authorization");
+    if (!authHeader) {
+        return next(createHttpError(401, "Auth token is required"));
     }
+
+    const accessToken = authHeader.split(" ")[1];
+    if (!accessToken) {
+        return next(createHttpError(401, "Access token not provided"));
+    }
+
     try {
-        const paresedToken = token.split(' ')[1]
-        const decoded = jwt.verify(paresedToken, config.JWT_ACCESS_KEY as string)
-        console.log('---------------------------------------------------------------------------')
-        console.log('decoded token', decoded);
-        const { isLogin, email, _id }: any = decoded.valueOf()
-        const _req = req as AuthRequest
-        _req.email = email
+        // Verify the access token
+        const decoded = verifyToken(accessToken, config.JWT_ACCESS_KEY as string) as jwt.JwtPayload;
+        const { isLogin, email, _id } = decoded;
+
+        const _req = req as AuthRequest;
+        _req.email = email;
         _req._id = _id;
         _req.isLogin = isLogin;
         _req.isAccessTokenExp = false;
-        next()
-    } catch (err: any) {
-        if (err.name === 'TokenExpiredError') {
-            const token = req.header('refreshToken')
-            console.log("Refresh token", token);
 
-            if (!token) {
-                return next(createHttpError(401, 'Token not found'))
+        return next();
+    } catch (err: any) {
+        // Handle expired access token
+        if (err.name === "TokenExpiredError") {
+            const refreshTokenHeader = req.header("refreshToken");
+            if (!refreshTokenHeader) {
+                return next(createHttpError(401, "Refresh token not found"));
             }
-            const paresedToken = token.split(' ')[1]
+
+            const refreshToken = refreshTokenHeader.split(" ")[1];
+            if (!refreshToken) {
+                return next(createHttpError(401, "Invalid refresh token format"));
+            }
+
             try {
-                const decodeToken = jwt.verify(paresedToken, config.JWT_REFRESH_KEY as string)
-                const { isLogin, email, _id }:any = decodeToken;
-                const _req = req as AuthRequest
-                _req._id = _id
-                _req.isLogin = isLogin
-                _req.email = email
-                _req.isAccessTokenExp = true
-                next()
+                // Verify the refresh token
+                const decoded = verifyToken(refreshToken, config.JWT_REFRESH_KEY as string) as jwt.JwtPayload;
+                const { isLogin, email, _id } = decoded;
+
+                const _req = req as AuthRequest;
+                _req._id = _id;
+                _req.isLogin = isLogin;
+                _req.email = email;
+                _req.isAccessTokenExp = true;
+
+                return next();
             } catch (error) {
-                return next(createHttpError(401, "Token expiry. login again!"))
+                return next(createHttpError(401, "Invalid or expired refresh token. Please log in again."));
             }
         }
-        return next(createHttpError(401, "Token not valid . login again!"))
-    }
-}
 
-export default authenticate
+        return next(createHttpError(401, "Invalid access token. Please log in again."));
+    }
+};
+
+export default authenticate;
