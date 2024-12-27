@@ -344,10 +344,69 @@ const updateProduct = async (req: Request, res: Response, next: NextFunction) =>
             accessToken: isAccessTokenExp ? accessToken : undefined,
         });
     } catch (error) {
-        console.error('Error updating product:', error);
+        // console.error('Error updating product:', error);
         return next(createHttpError(500, 'Internal server error while updating product'));
     }
 };
+
+const deleteProductById = async (req: Request, res: Response, next: NextFunction) => {
+
+    const productId = req.params.productId
+
+    const _req = req as AuthRequest;
+    const { _id, email, isLogin, isAccessTokenExp } = _req;
+
+    try {
+        //  Verify user
+        const isValidUser = await User.findById(_id);
+        if (!isValidUser) {
+            return next(createHttpError(401, 'Invalid user'));
+        }
+
+        //  Check if user is logged in
+        if (!isValidUser.isLogin) {
+            return next(createHttpError(401, 'You must log in first'));
+        }
+
+        //  Check user role
+        const userRole = isValidUser.role;
+        if (userRole !== 'admin' && userRole !== 'manager') {
+            return next(createHttpError(403, 'You are not authorized to update this product'));
+        }
+
+        //  Verify product
+        const productDetail = await Product.findById(productId);
+        if (!productDetail) {
+            return next(createHttpError(404, 'Product not found'));
+        }
+        // Step 5: Handle old image publicId
+        let oldPublicId = '';
+        if (productDetail.image) {
+            const img_url = productDetail.image.split('?')[0]; // Remove query parameters
+            const arr = img_url.split('/');
+            oldPublicId = `${arr.at(-2)}/${arr.at(-1)}`;
+            console.log('Old Image Public ID:', oldPublicId);
+        }
+        //  delete img scr from cloudnary
+        await cloudinary.uploader.destroy(oldPublicId)
+        // delete from db
+        await Product.findOneAndDelete({ _id: productId })
+        let accessToken
+        //  Handle access token expiration
+        if (isAccessTokenExp) {
+            accessToken = isValidUser.generateAccessToken();
+        }
+        // Respond with the  product
+        res.status(200).json({
+            success: true,
+            message: 'Product deleted successfully',
+            accessToken: isAccessTokenExp ? accessToken : undefined,
+        });
+
+    } catch (error) {
+        next(createHttpError(500, 'Internal server error while deleting the product'));
+    }
+}
 
 
 
@@ -356,5 +415,6 @@ export {
     getAllProducts,
     getProductByCategory,
     getSingleProduct,
-    updateProduct
+    updateProduct,
+    deleteProductById
 }
