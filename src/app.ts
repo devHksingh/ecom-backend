@@ -8,6 +8,7 @@ import { config } from './config/config';
 import globalErrorHandler from './middlewares/globalErrorHandler';
 import userRouter from './user/userRouter';
 import productRouter from './product/productRouter';
+import orderRouter from './order/orderRouter';
 
 
 const app = express()
@@ -45,6 +46,7 @@ app.get('/', (req, res, next) => {
 
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/products',productRouter)
+app.use('/api/v1/orders',orderRouter)
 
 // Global error handler
 app.use(globalErrorHandler);
