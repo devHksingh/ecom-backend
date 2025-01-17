@@ -183,15 +183,61 @@ const updateOrderStatus = async (req: Request, res: Response, next: NextFunction
         if (error instanceof z.ZodError) {
             return next(createHttpError(401, { message: { type: "Validation error", zodError: error.errors } }))
         }
-        return next(createHttpError(500, "Error placing order"));
+        return next(createHttpError(500, "Error occured while updating order status"));
     }
 }
 
+const getAllOrder = async (req: Request, res: Response, next: NextFunction)=>{
+    /*
+    * Only admin and manager are allowed to get all order details
+    */
+    try {
+        const _req = req as AuthRequest
+        const userId = _req._id
+        const isAccessTokenExp = _req.isAccessTokenExp
+        //    verify user
+        const user = await User.findById(userId)
+        if (!user) {
+            return next(createHttpError(401, "Invalid request. User not found"));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(400, 'You have to login First!'))
+        }
 
+        if(user.role !== "admin" && user.role !== "manager"){
+            return next(createHttpError(400, 'Unauthorerize request'))
+        }
+        const orders = await Order.find()
+        // Handle access token expiration
+        let accessToken
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken()
+        }
+        if (!orders.length) {
+            res.status(404).json({
+                success: false,
+                message: "No orders found",
+            });
+            return; 
+        }
 
+        
+        if(orders){
+             res.status(200).json({
+                success: true,
+                message: 'orders list fetch successfully',
+                orders,
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            })
+            return
+        }
+    } catch (error) {
+        return next(createHttpError(500, "Error occured while getting order list"));
+    }
+}
 
 // const  orderHistory get all order details filter by  userId => 
 //  get all order
 // const get single OrderDetails 
 
-export { placeOrder, updateOrderStatus }
+export { placeOrder, updateOrderStatus,getAllOrder }
