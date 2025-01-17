@@ -154,7 +154,7 @@ const updateOrderStatus = async (req: Request, res: Response, next: NextFunction
             return next(createHttpError(400, 'You have to login First!'))
         }
         console.log(user.role);
-        
+
         if (user.role !== "admin" && user.role !== "manager") {
             console.log(user.role);
             return next(createHttpError(400, 'Unauthorerize request'))
@@ -187,7 +187,7 @@ const updateOrderStatus = async (req: Request, res: Response, next: NextFunction
     }
 }
 
-const getAllOrder = async (req: Request, res: Response, next: NextFunction)=>{
+const getAllOrder = async (req: Request, res: Response, next: NextFunction) => {
     /*
     * Only admin and manager are allowed to get all order details
     */
@@ -204,7 +204,7 @@ const getAllOrder = async (req: Request, res: Response, next: NextFunction)=>{
             return next(createHttpError(400, 'You have to login First!'))
         }
 
-        if(user.role !== "admin" && user.role !== "manager"){
+        if (user.role !== "admin" && user.role !== "manager") {
             return next(createHttpError(400, 'Unauthorerize request'))
         }
         const orders = await Order.find()
@@ -218,12 +218,12 @@ const getAllOrder = async (req: Request, res: Response, next: NextFunction)=>{
                 success: false,
                 message: "No orders found",
             });
-            return; 
+            return;
         }
 
-        
-        if(orders){
-             res.status(200).json({
+
+        if (orders) {
+            res.status(200).json({
                 success: true,
                 message: 'orders list fetch successfully',
                 orders,
@@ -236,8 +236,33 @@ const getAllOrder = async (req: Request, res: Response, next: NextFunction)=>{
     }
 }
 
+const getSingleOrder = async (req: Request, res: Response, next: NextFunction) => {
+    const orderId = req.params.orderId
+    if (!orderId) {
+        return next(createHttpError(401, "orderId is required"))
+    }
+    try {
+        const order = await Order.findById(orderId)
+        if (!order) {
+            res.status(404).json({
+                success: false,
+                message: "No orders found",
+            });
+            return;
+        }
+        res.status(200).json({
+            success: true,
+            message: 'orders list fetch successfully',
+            order
+        })
+        return
+    } catch (error) {
+        return next(createHttpError(500, "Error occured while single order "));
+    }
+}
+
 // const  orderHistory get all order details filter by  userId => 
 //  get all order
 // const get single OrderDetails 
 
-export { placeOrder, updateOrderStatus,getAllOrder }
+export { placeOrder, updateOrderStatus, getAllOrder, getSingleOrder }
