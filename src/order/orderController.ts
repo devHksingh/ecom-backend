@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { placeOrderZodSchema } from './orderZodSchema';
+import { placeOrderZodSchema, updateOrderStatusSchema } from './orderZodSchema';
 import { z } from 'zod';
 import createHttpError from 'http-errors';
 import { AuthRequest } from '../middlewares/authMiddleware';
@@ -46,7 +46,7 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
             totalPrice = (product.price * quantity) - product.salePrice;
         }
         // Get user details
-        const user = await User.findById(userId)
+        const user = await User.findById(userId).select("-password")
         if (!user) {
             next(createHttpError(404, "User not found"))
         }
@@ -113,4 +113,85 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
-export { placeOrder }
+
+
+const updateOrderStatus = async (req: Request, res: Response, next: NextFunction) => {
+
+    /*
+    const trackingId = `ORD-${id}`
+    * Check is Order id is valid
+    * Only Admin and manager are allow to update
+    * Update order status
+    * Resend access token if expiry 
+    */
+
+    try {
+        const isValidRequest = updateOrderStatusSchema.parse(req.body)
+        const { trackingId, orderStatus } = isValidRequest
+        const _req = req as AuthRequest
+        const userId = _req._id
+        const isAccessTokenExp = _req.isAccessTokenExp
+
+        // verify trackingId formate
+
+
+        const idArr = trackingId.split('-')
+        // 4 is fixed at the 13th character (indicates version 4) and starting with "ORD"
+        const isValidFormat = idArr.at(0) === "ORD" && idArr.at(3)?.at(0) === "4"
+
+        console.log(isValidFormat);
+
+        if (!isValidFormat) {
+            return next(createHttpError(400, "Invalid orderId"))
+        }
+
+        //    verify user
+        const user = await User.findById(userId)
+        if (!user) {
+            return next(createHttpError(401, "Invalid request. User not found"));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(400, 'You have to login First!'))
+        }
+        console.log(user.role);
+        
+        if (user.role !== "admin" && user.role !== "manager") {
+            console.log(user.role);
+            return next(createHttpError(400, 'Unauthorerize request'))
+        }
+        // Update order status
+        const order = await Order.findOneAndUpdate({
+            trackingId
+        },
+            {
+                orderStatus
+            }, {
+            new: true
+        })
+        // Handle access token expiration
+        let accessToken
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken()
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Order status updated successfully',
+            orderDetails: order,
+            accessToken: isAccessTokenExp ? accessToken : undefined,
+        })
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return next(createHttpError(401, { message: { type: "Validation error", zodError: error.errors } }))
+        }
+        return next(createHttpError(500, "Error placing order"));
+    }
+}
+
+
+
+
+// const  orderHistory get all order details filter by  userId => 
+//  get all order
+// const get single OrderDetails 
+
+export { placeOrder, updateOrderStatus }
