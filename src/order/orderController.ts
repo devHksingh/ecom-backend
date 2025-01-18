@@ -217,6 +217,7 @@ const getAllOrder = async (req: Request, res: Response, next: NextFunction) => {
             res.status(404).json({
                 success: false,
                 message: "No orders found",
+                accessToken: isAccessTokenExp ? accessToken : undefined,
             });
             return;
         }
@@ -261,7 +262,7 @@ const getSingleOrder = async (req: Request, res: Response, next: NextFunction) =
     }
 }
 
-const getOrderByUserId = async (req: Request, res: Response, next: NextFunction)=>{
+const getOrderByUserId = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const _req = req as AuthRequest
         const userId = _req._id
@@ -273,12 +274,81 @@ const getOrderByUserId = async (req: Request, res: Response, next: NextFunction)
         }
         if (!user.isLogin) {
             return next(createHttpError(400, 'You have to login First!'))
-        } 
-        const order = await Order.find({user:userId})
-        if(order){
-            res.status(200).json({order})
-
         }
+        const order = await Order.find({ user: userId })
+        let accessToken
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken()
+        }
+        if (order) {
+            res.status(200).json({
+                success: true,
+                message: 'orders list fetch successfully',
+                order,
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            })
+            return
+        }
+        if (!order) {
+            res.status(404).json({
+                success: false,
+                message: "No orders found",
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            });
+            return;
+        }
+    } catch (error) {
+        return next(createHttpError(500, "Error occured while getting order list"));
+    }
+}
+const getOrderByUserEmail = async (req: Request, res: Response, next: NextFunction) => {
+    /*
+    * Only admin and manager are allowed to get all order details for particular user email
+    */
+    try {
+        const _req = req as AuthRequest
+        const userId = _req._id
+        const customerEmail = req.params.customerEmail
+        const isAccessTokenExp = _req.isAccessTokenExp
+        //    verify user
+        const user = await User.findById(userId)
+        if (!user) {
+            return next(createHttpError(401, "Invalid request. User not found"));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(400, 'You have to login First!'))
+        }
+
+        if (user.role !== "admin" && user.role !== "manager") {
+            return next(createHttpError(400, 'Unauthorerize request'))
+        }
+        const customer = await User.findOne({ email: customerEmail }).select('-password')
+        if(!customer){
+            return next(createHttpError(400, 'No user Found'))
+        }
+        const order = await Order.find({user:customer.id})
+        let accessToken
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken()
+        }
+        if(!order.length){
+            res.status(404).json({
+                success: false,
+                message: "No orders found",
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            });
+            return;
+        }
+        if(order){
+            res.status(200).json({
+                success: true,
+                message: 'orders list fetch successfully',
+                order,
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            })
+            return
+        }
+
     } catch (error) {
         return next(createHttpError(500, "Error occured while getting order list"));
     }
@@ -288,4 +358,11 @@ const getOrderByUserId = async (req: Request, res: Response, next: NextFunction)
 //  get all order
 // const get single OrderDetails getOrderByUserEmail
 
-export { placeOrder, updateOrderStatus, getAllOrder, getSingleOrder,getOrderByUserId }
+export {
+    placeOrder,
+    updateOrderStatus,
+    getAllOrder,
+    getSingleOrder,
+    getOrderByUserId,
+    getOrderByUserEmail
+}
