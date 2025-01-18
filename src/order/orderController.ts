@@ -261,8 +261,31 @@ const getSingleOrder = async (req: Request, res: Response, next: NextFunction) =
     }
 }
 
+const getOrderByUserId = async (req: Request, res: Response, next: NextFunction)=>{
+    try {
+        const _req = req as AuthRequest
+        const userId = _req._id
+        const isAccessTokenExp = _req.isAccessTokenExp
+        //    verify user
+        const user = await User.findById(userId)
+        if (!user) {
+            return next(createHttpError(401, "Invalid request. User not found"));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(400, 'You have to login First!'))
+        } 
+        const order = await Order.find({user:userId})
+        if(order){
+            res.status(200).json({order})
+
+        }
+    } catch (error) {
+        return next(createHttpError(500, "Error occured while getting order list"));
+    }
+}
+
 // const  orderHistory get all order details filter by  userId => 
 //  get all order
-// const get single OrderDetails 
+// const get single OrderDetails getOrderByUserEmail
 
-export { placeOrder, updateOrderStatus, getAllOrder, getSingleOrder }
+export { placeOrder, updateOrderStatus, getAllOrder, getSingleOrder,getOrderByUserId }
