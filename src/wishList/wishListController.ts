@@ -63,14 +63,14 @@ const addToWishlist = async (req: Request, res: Response, next: NextFunction) =>
             accessToken = user.generateAccessToken()
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Product added to wishlist",
             wishlist: populatedWishlist,
             accessToken: isAccessTokenExp ? accessToken : undefined,
         });
     } catch (error) {
-        next(createHttpError(500, "Error adding to wishlist"));
+        return next(createHttpError(500, "Error adding to wishlist"));
     }
 
 }
@@ -102,12 +102,13 @@ const getWishlist = async (req: Request, res: Response, next: NextFunction) => {
             accessToken = user.generateAccessToken()
         }
         if (!wishlist) {
-            return res.status(200).json({
+            res.status(200).json({
                 success: true,
                 message: "Wishlist is empty",
                 wishlist: null,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
             });
+            return
         }
 
         res.status(200).json({
@@ -115,8 +116,9 @@ const getWishlist = async (req: Request, res: Response, next: NextFunction) => {
             wishlist,
             accessToken: isAccessTokenExp ? accessToken : undefined,
         });
+
     } catch (error) {
-        next(createHttpError(500, "Error fetching wishlist"));
+        return next(createHttpError(500, "Error fetching wishlist"));
     }
 
 }
