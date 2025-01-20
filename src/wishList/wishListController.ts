@@ -63,7 +63,7 @@ const addToWishlist = async (req: Request, res: Response, next: NextFunction) =>
             accessToken = user.generateAccessToken()
         }
 
-        return res.status(200).json({
+        res.status(200).json({
             success: true,
             message: "Product added to wishlist",
             wishlist: populatedWishlist,
