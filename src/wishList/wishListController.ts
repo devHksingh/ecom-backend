@@ -29,6 +29,9 @@ const addToWishlist = async (req: Request, res: Response, next: NextFunction) =>
     const isAccessTokenExp = _req.isAccessTokenExp
 
     try {
+        if (!productId) {
+            return next(createHttpError(400, "Product id is required"))
+        }
         //    find user
         const user = await User.findById(userId)
         if (!user) {
@@ -123,7 +126,78 @@ const getWishlist = async (req: Request, res: Response, next: NextFunction) => {
 
 }
 
+const removeWishlist = async (req: Request, res: Response, next: NextFunction) => {
+    /*
+    * Validate user
+    * Check valid product id
+    * get wishlist
+    * remove product from wishlist by finding productid
+    */
+
+    try {
+        const _req = req as AuthRequest
+        const userId = _req._id
+        const isAccessTokenExp = _req.isAccessTokenExp
+        const productId = req.params.productId
+
+
+        if (!productId) {
+            return next(createHttpError(400, "Product id is required"))
+        }
+        //    find user
+        const user = await User.findById(userId)
+        if (!user) {
+            return next(createHttpError(400, "User Not found"))
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(400, "Unauthorized request. Please log in first."))
+        }
+
+        const product = await Product.findById(productId)
+        if (!product) {
+            return next(createHttpError(404, "Product not found."))
+        }
+
+        // get wishlist
+        const wishList = await findOrCreateWishlist(user.id)
+        // genrate accessToken if expired
+        let accessToken
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken()
+        }
+        // console.log(wishList)
+        // console.log(wishList.user)
+        // console.log(wishList.products)
+        if (!wishList.products) {
+            res.status(200).json({
+                success: false,
+                message: "Wishlist is empty",
+                wishlist: null,
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            });
+            return
+        }
+        // remove product from wishlist by finding productid
+        if (wishList.products.includes(product.id)) {
+            wishList.products = wishList.products.filter((item) => item.toString() !== productId)
+            await wishList.save()
+        }
+
+
+
+        res.status(200).json({
+            success: true,
+            message: "Product removed from wishlist",
+            wishList,
+            accessToken: isAccessTokenExp ? accessToken : undefined,
+        });
+    } catch (error) {
+        next(createHttpError(500, "Error removing product from wishlist"));
+    }
+}
+
 export {
     addToWishlist,
-    getWishlist
+    getWishlist,
+    removeWishlist
 }
