@@ -6,6 +6,6 @@ import { addToWishlist, getWishlist } from './wishListController'
 const wishListRouter = express.Router()
 
 wishListRouter.get('/getWishlist', authenticate, getWishlist)
-wishListRouter.post('/addToWishlist', authenticate, addToWishlist)
+wishListRouter.post('/addToWishlist/:productId', authenticate, addToWishlist)
 
 export default wishListRouter
