@@ -15,7 +15,7 @@ const loginUserSchema = z.object({
     password: z.string().trim().min(6, { message: "Must be 6 or more characters long" }),
 
 })
-const logouUserSchema = z.object({
+const changeUserPasswordSchema = z.object({
     oldPassword: z.string().trim().min(6, { message: "Must be 6 or more characters long" }),
     password: z.string().trim().min(6, { message: "Must be 6 or more characters long" }),
     confirmPassword: z.string().trim()
@@ -28,5 +28,5 @@ const logouUserSchema = z.object({
 export {
     createUserSchema,
     loginUserSchema,
-    logouUserSchema
+    changeUserPasswordSchema
 }
