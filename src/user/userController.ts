@@ -78,7 +78,7 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
             const isPasswordCorrect = await user.isPasswordCorrect(password)
             console.log(isPasswordCorrect)
             if (!isPasswordCorrect) {
-                const err = createHttpError(400, "Invalid old password");
+                const err = createHttpError(400, "Invalid  password");
                 next(err)
             }
             const accessToken = user.generateAccessToken()

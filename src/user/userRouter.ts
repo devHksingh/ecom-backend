@@ -14,7 +14,7 @@ userRouter.get('/logout', authenticate, logoutUser)
 userRouter.get('/changePassword', authenticate, changePassword)
 userRouter.post('/admin/register', createAdmin)
 userRouter.post('/admin/register/manager', authenticate, createManager)
-userRouter.post('/admin/login', loginUser)
+// userRouter.post('/admin/login', loginUser)
 userRouter.get('/admin/logout', authenticate, logoutUser)
 userRouter.get('/admin/getAlluser', authenticate, getAlluser)
 
