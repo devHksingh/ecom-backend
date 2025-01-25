@@ -67,14 +67,13 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
         const { email, password } = isValidUser
         const user = await User.findOne({
             email
-        })
+        }).select("-cardNumber")
         if (user) {
             if (user.isLogin) {
                 const err = createHttpError(401, "User is already login")
                 next(err)
             }
-            console.log(user)
-            console.log(password)
+
             const isPasswordCorrect = await user.isPasswordCorrect(password)
             console.log(isPasswordCorrect)
             if (!isPasswordCorrect) {
@@ -93,7 +92,14 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
                     success: true,
                     message: "User is login successfully",
                     accessToken: accessToken,
-                    refreshToken: refreshToken
+                    refreshToken: refreshToken,
+                    userDetails:{
+                        id:user.id,
+                        name:user.name,
+                        email:user.email,
+                        
+                    }
+                    
                 })
         } else {
             const err = createHttpError(401, "User does not exist")
