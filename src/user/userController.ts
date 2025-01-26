@@ -67,7 +67,7 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
         const { email, password } = isValidUser
         const user = await User.findOne({
             email
-        }).select("-cardNumber")
+        })
         if (user) {
             if (user.isLogin) {
                 const err = createHttpError(401, "User is already login")
@@ -93,13 +93,13 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
                     message: "User is login successfully",
                     accessToken: accessToken,
                     refreshToken: refreshToken,
-                    userDetails:{
-                        id:user.id,
-                        name:user.name,
-                        email:user.email,
-                        
+                    userDetails: {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+
                     }
-                    
+
                 })
         } else {
             const err = createHttpError(401, "User does not exist")
@@ -195,7 +195,7 @@ const getAlluser = async (req: Request, res: Response, next: NextFunction) => {
         next(createHttpError(401, 'you are unauthorize for this request.Kindly login first'))
     }
     try {
-        const user = await User.findOne({ email }).select("-password")
+        const user = await User.findOne({ email }).select("-password -cardNumber -isLogin")
         if (user) {
             if (user.role === "user") {
                 next(createHttpError(401, 'you are unauthorize for this request.'))
@@ -206,7 +206,7 @@ const getAlluser = async (req: Request, res: Response, next: NextFunction) => {
             if (isAccessTokenExp) {
                 newAccessToken = user.generateAccessToken()
             }
-            const alluser = await User.find({ role: "user" }).select("-password")
+            const alluser = await User.find({ role: "user" }).select("-password -cardNumber -isLogin")
             res.status(200).json({
                 success: true,
                 alluser,
@@ -215,6 +215,35 @@ const getAlluser = async (req: Request, res: Response, next: NextFunction) => {
             })
         }
 
+    } catch (error) {
+        next(createHttpError(500, 'unable to get all user info.'))
+    }
+}
+
+const getSingleuser = async (req: Request, res: Response, next: NextFunction) => {
+    const _req = req as AuthRequest
+    const { isAccessTokenExp, isLogin, email, _id } = _req
+
+    try {
+        const user = await User.findOne({ email }).select("-password")
+        if (!user) {
+            next(createHttpError(404, 'Unauthorize request .No user Found'))
+        }
+        if(user){
+            if (!user.isLogin) {
+                next(createHttpError(401, 'You are logout!.Kindly login first'))
+            }
+            let newAccessToken
+            if (isAccessTokenExp) {
+                newAccessToken = user.generateAccessToken()
+            }
+            res.status(200).json({
+                success: true,
+                user,
+                isAccessTokenExp,
+                accessToken: newAccessToken
+            })
+        }
     } catch (error) {
         next(createHttpError(500, 'unable to get all user info.'))
     }
@@ -293,5 +322,6 @@ export {
     createAdmin,
     getAlluser,
     createManager,
-    changePassword
+    changePassword,
+    getSingleuser
 }
