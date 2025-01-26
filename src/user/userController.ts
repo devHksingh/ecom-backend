@@ -44,7 +44,7 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
         })
         if (newUser) {
 
-            res.status(201).json({ success: true, message: "user is register", userId: newUser.id })
+            res.status(201).json({ success: true, message: "user is register" })
 
 
 
