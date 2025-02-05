@@ -10,6 +10,7 @@ import userRouter from './user/userRouter';
 import productRouter from './product/productRouter';
 import orderRouter from './order/orderRouter';
 import wishListRouter from './wishList/wishListRoute';
+import cartRouter from './cart/cartRouter';
 
 
 const app = express()
@@ -49,6 +50,7 @@ app.use('/api/v1/users', userRouter)
 app.use('/api/v1/products',productRouter)
 app.use('/api/v1/orders',orderRouter)
 app.use('/api/v1/wishList',wishListRouter)
+app.use('/api/v1/cart',cartRouter)
 
 // Global error handler
 app.use(globalErrorHandler);
