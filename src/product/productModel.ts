@@ -42,7 +42,8 @@ const productSchema = new mongoose.Schema<Products>({
     },
     salePrice: {
         type: Number,
-        min: [0, "Sale price is not negative"]
+        min: [0, "Sale price is not negative"],
+        default:0
     }
 }, { timestamps: true })
 

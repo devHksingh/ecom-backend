@@ -8,7 +8,7 @@ import { Product } from './productModel'
 import { z } from 'zod'
 import { createProductSchema } from './productZodSchema'
 import fs from 'node:fs'
-import { log } from 'node:console'
+
 
 const createProduct = async (req: Request, res: Response, next: NextFunction) => {
     // check req formate from zod
