@@ -373,6 +373,14 @@ const deleteProductById = async (req: Request, res: Response, next: NextFunction
         if (userRole !== 'admin' && userRole !== 'manager') {
             return next(createHttpError(403, 'You are not authorized to update this product'));
         }
+        // check total length of products if length is less than 40 then not allowed
+        const products = await Product.find()
+        // console.log("All products :",products)
+        // console.log("All products :",products.length)
+        if(products.length<40){
+            return next(createHttpError(400,'Not enough product to dispaly'))
+        }
+        
 
         //  Verify product
         const productDetail = await Product.findById(productId);
