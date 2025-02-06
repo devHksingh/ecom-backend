@@ -204,6 +204,59 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
         next(createHttpError(500, "Error while updating cart"));
     }
 }
+// Remove product from cart
+const removeFromCart = async (req: Request, res: Response, next: NextFunction) => {
+    const { productId } = req.params;
+    const _req = req as AuthRequest;
+    const { _id: userId } = _req;
+
+    try {
+        const cart = await Cart.findOne({ user: userId });
+        if (!cart) {
+            return next(createHttpError(404, 'Cart not found'));
+        }
+        const product = await Product.findById(productId)
+        if (!product) {
+            return next(createHttpError(404, 'Product not found'));
+        }
+
+        const itemIndex = cart.items.findIndex(
+            item => item.product.toString() === productId
+        );
+
+        if (itemIndex === -1) {
+            return next(createHttpError(404, 'Product not found in cart'));
+        }
+        const productQuantity = cart.items[itemIndex].quantity
+
+        // Remove item from cart
+        cart.items.splice(itemIndex, 1);
+        await cart.save()
+
+        // update product quantity
+        product.totalStock += productQuantity
+        await product.save()
+
+        // Recalculate totals
+
+        cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0);
+        cart.totalAmount = cart.items.reduce((total, item) => {
+            const itemPrice = product.price - product.salePrice;
+            return total + (itemPrice * item.quantity);
+        }, 0);
+
+        await cart.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Product removed from cart successfully',
+            cart
+        });
+
+    } catch (error) {
+        next(createHttpError(500, 'Error removing product from cart'));
+    }
+};
 
 
 
@@ -211,7 +264,6 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
 export {
     addToCart,
     updateCartQuantity,
-    // removeFromCart,
+    removeFromCart,
     // getCart
 };
-
