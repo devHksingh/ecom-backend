@@ -208,9 +208,22 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
 const removeFromCart = async (req: Request, res: Response, next: NextFunction) => {
     const { productId } = req.params;
     const _req = req as AuthRequest;
-    const { _id: userId } = _req;
+    
 
     try {
+        const { _id: userId, isAccessTokenExp } = _req
+        let accessToken
+        // validate user
+        const user = await User.findById(userId)
+        if (!user) {
+            return next(createHttpError(404, 'User not found'));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(401, 'Unauthorized.You have to login first.'));
+        }
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken();
+        }
         const cart = await Cart.findOne({ user: userId });
         if (!cart) {
             return next(createHttpError(404, 'Cart not found'));
@@ -250,7 +263,8 @@ const removeFromCart = async (req: Request, res: Response, next: NextFunction) =
         res.status(200).json({
             success: true,
             message: 'Product removed from cart successfully',
-            cart
+            cart,
+            accessToken: isAccessTokenExp ? accessToken : undefined,
         });
 
     } catch (error) {
