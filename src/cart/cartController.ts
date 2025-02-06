@@ -208,8 +208,6 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
 const removeFromCart = async (req: Request, res: Response, next: NextFunction) => {
     const { productId } = req.params;
     const _req = req as AuthRequest;
-    
-
     try {
         const { _id: userId, isAccessTokenExp } = _req
         let accessToken
@@ -272,6 +270,41 @@ const removeFromCart = async (req: Request, res: Response, next: NextFunction) =
     }
 };
 
+// Get cart details
+const getCart = async (req: Request, res: Response, next: NextFunction) => {
+    const _req = req as AuthRequest;
+    
+
+    try {
+        const { _id: userId, isAccessTokenExp } = _req
+        let accessToken
+        // validate user
+        const user = await User.findById(userId)
+        if (!user) {
+            return next(createHttpError(404, 'User not found'));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(401, 'Unauthorized.You have to login first.'));
+        }
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken();
+        }
+        const cart = await Cart.findOne({ user: userId }).populate('items.product');
+        if (!cart) {
+            return next(createHttpError(404, 'Cart not found'));
+        }
+
+        res.status(200).json({
+            success: true,
+            cart,
+            accessToken: isAccessTokenExp ? accessToken : undefined,
+        });
+
+    } catch (error) {
+        next(createHttpError(500, 'Error fetching cart details'));
+    }
+};
+
 
 
 
@@ -279,5 +312,5 @@ export {
     addToCart,
     updateCartQuantity,
     removeFromCart,
-    // getCart
+    getCart
 };
