@@ -150,7 +150,7 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
             await product.save()
             res.status(200).json({
                 success: true,
-                message: 'Product added to cart successfully',
+                message: 'Product quantity increased successfully',
                 cart,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
             });
@@ -159,6 +159,25 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
         if (type === "remove") {
             // Update quantity
             cart.items[itemIndex].quantity -= quantity
+            // If quantity becomes 0, remove the item from cart
+            if (cart.items[itemIndex].quantity === 0) {
+                cart.items.splice(itemIndex, 1);
+                await cart.save()
+                cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0)
+                cart.totalAmount = cart.items.reduce((total, item) => {
+                    const itemPrice = product.price - product.salePrice
+                    return total + (itemPrice * item.quantity)
+                }, 0)
+                await cart.save()
+                product.totalStock += quantity
+                await product.save()
+                res.status(200).json({
+                    success: true,
+                    message: 'Product remove from cart successfully',
+                    cart,
+                    accessToken: isAccessTokenExp ? accessToken : undefined,
+                });
+            }
             await cart.save()
             // recalculate totals
             cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0)
@@ -171,7 +190,7 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
             await product.save()
             res.status(200).json({
                 success: true,
-                message: 'Product added to cart successfully',
+                message: 'Product quantity decreased successfully',
                 cart,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
             });
@@ -185,6 +204,7 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
         next(createHttpError(500, "Error while updating cart"));
     }
 }
+
 
 
 
