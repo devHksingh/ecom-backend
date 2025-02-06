@@ -3,7 +3,7 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 import createHttpError from 'http-errors';
 import { Cart } from './cartModel';
 import { Product } from '../product/productModel';
-import { cartZodSchema } from './cartZodSchema';
+import { cartUpdatequantity, cartZodSchema } from './cartZodSchema';
 import { z } from 'zod';
 import { User } from '../user/userModel';
 import mongoose from 'mongoose';
@@ -14,8 +14,8 @@ const addToCart = async (req: Request, res: Response, next: NextFunction) => {
         const isValidRequest = cartZodSchema.parse(req.body)
         const { productId, quantity } = isValidRequest
         const _req = req as AuthRequest
-        const { _id: userId,isAccessTokenExp } = _req
-        let accessToken=""
+        const { _id: userId, isAccessTokenExp } = _req
+        let accessToken = ""
         // validate user
         const user = await User.findById(userId)
         if (!user) {
@@ -70,7 +70,7 @@ const addToCart = async (req: Request, res: Response, next: NextFunction) => {
 
         await cart.save();
         // update stock quantity
-        product.totalStock -=quantity
+        product.totalStock -= quantity
 
         await product.save()
 
@@ -87,18 +87,111 @@ const addToCart = async (req: Request, res: Response, next: NextFunction) => {
         if (error instanceof z.ZodError) {
             next(createHttpError(401, { message: { type: "Validation error", zodError: error.errors } }))
         }
-        next(createHttpError(500, "Error placing order"));
+        next(createHttpError(500, "Error while creating cart"));
     }
 
 }
+// Update quantity
+// add quantity
 
+const updateCartQuantity = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const isvalidReq = cartUpdatequantity.parse(req.body)
+        const { productId, quantity, type } = isvalidReq
+        const _req = req as AuthRequest
+        const { _id: userId, isAccessTokenExp } = _req
+        let accessToken
+        // validate user
+        const user = await User.findById(userId)
+        if (!user) {
+            return next(createHttpError(404, 'User not found'));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(401, 'Unauthorized.You have to login first.'));
+        }
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken();
+        }
+        // Validate product exists and has enough stock
+        const product = await Product.findById(productId)
+        if (!product) {
+            return next(createHttpError(404, 'Product not found'));
+        }
+        const cart = await Cart.findOne({ user: userId })
+        if (!cart) {
+            return next(createHttpError(404, 'Cart not found'));
+        }
+        // Validate quantity
+        if (quantity < 1) {
+            return next(createHttpError(400, 'Quantity must be at least 1'));
+        }
+        const itemIndex = cart.items.findIndex((item) => item.product.toString() === productId)
+        if (itemIndex === -1) {
+            return next(createHttpError(404, 'Product not found in cart'));
+        }
+        if (type === "add") {
 
+            if (product.totalStock < quantity) {
+                return next(createHttpError(400, 'Not enough stock available'));
+            }
+
+            // Update quantity
+
+            cart.items[itemIndex].quantity += quantity
+            // recalculate totals
+            cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0)
+            cart.totalAmount = cart.items.reduce((total, item) => {
+                const itemPrice = product.price - product.salePrice
+                return total + (itemPrice * item.quantity)
+            }, 0)
+            await cart.save()
+            // update stock quantity
+            product.totalStock -= quantity
+            await product.save()
+            res.status(200).json({
+                success: true,
+                message: 'Product added to cart successfully',
+                cart,
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            });
+
+        }
+        if (type === "remove") {
+            // Update quantity
+            cart.items[itemIndex].quantity -= quantity
+            await cart.save()
+            // recalculate totals
+            cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0)
+            cart.totalAmount = cart.items.reduce((total, item) => {
+                const itemPrice = product.price - product.salePrice
+                return total + (itemPrice * item.quantity)
+            }, 0)
+            await cart.save()
+            product.totalStock += quantity
+            await product.save()
+            res.status(200).json({
+                success: true,
+                message: 'Product added to cart successfully',
+                cart,
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            });
+
+        }
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            next(createHttpError(401, { message: { type: "Validation error", zodError: error.errors } }))
+        }
+        next(createHttpError(500, "Error while updating cart"));
+    }
+}
 
 
 
 export {
     addToCart,
-    // updateCartQuantity,
+    updateCartQuantity,
     // removeFromCart,
     // getCart
 };
+
