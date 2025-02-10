@@ -85,12 +85,14 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
                 console.log("Unable to delete local file");
 
             }
+            // split category
+            const ctegoryArr = category.split(' ')
 
             const newProduct = await Product.create({
                 title,
                 description,
                 brand,
-                category,
+                category:ctegoryArr,
                 image: optimizeUrl,
                 price,
                 currency,
