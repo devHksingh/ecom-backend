@@ -7,6 +7,7 @@ import { createProduct, deleteProductById, getAllProducts, getProductByCategory,
 
 const productRouter = express.Router()
 
+
 // file store local ->
 const upload = multer({
     dest: path.resolve(__dirname, "../../public/data/uploads"),
@@ -15,8 +16,8 @@ const upload = multer({
 
 })
 
-productRouter.post('/register', authenticate, upload.fields([{ name: "prductImage", maxCount: 1 }]), createProduct)
-productRouter.patch('/update/:productId', authenticate, upload.fields([{ name: "prductImage", maxCount: 1 }]), updateProduct)
+productRouter.post('/register', authenticate, upload.fields([{ name: "productImage", maxCount: 1 }]), createProduct)
+productRouter.patch('/update/:productId', authenticate, upload.fields([{ name: "productImage", maxCount: 1 }]), updateProduct)
 productRouter.get('/allProduct',  getAllProducts)
 productRouter.get('/getProductByCategory',  getProductByCategory)
 productRouter.get('/:productId',  getSingleProduct)
