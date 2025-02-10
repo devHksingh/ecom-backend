@@ -46,7 +46,7 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
             }
             console.log(req.files)
             const files = req.files as { [fieldname: string]: Express.Multer.File[] }
-            const fileName = files.prductImage[0].filename
+            const fileName = files.productImage[0].filename
             const filePath = path.resolve(
                 __dirname,
                 "../../public/data/uploads",
@@ -265,11 +265,11 @@ const updateProduct = async (req: Request, res: Response, next: NextFunction) =>
 
         // Step 6: Handle new files (Cloudinary upload)
         const newFiles = req.files as { [fieldname: string]: Express.Multer.File[] };
-        if (newFiles.prductImage) {
-            console.log(newFiles.prductImage);
+        if (newFiles.productImage) {
+            console.log(newFiles.productImage);
 
             // const file = newFiles.productImage[0];
-            const fileName = newFiles.prductImage[0].filename
+            const fileName = newFiles.productImage[0].filename
             const filePath = path.resolve(
                 __dirname,
                 "../../public/data/uploads",
