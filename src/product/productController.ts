@@ -418,7 +418,32 @@ const deleteProductById = async (req: Request, res: Response, next: NextFunction
     }
 }
 
+const getProductByCategoryWithLimit = async (req: Request, res: Response, next: NextFunction)=>{
+    try {
+        const { category } = req.body;
+        const {limit = 10,skip=0}=req.query
+        // validate category
+        
+        if (!category || !Array.isArray(category) || category.length === 0) {
+            return next(createHttpError(400, "Category is required and must be a non-empty array"));
+        }
 
+        // convert limit and skip to number
+        const parsedLimit = parseInt(limit as string,10)||10
+        const parsedSkip = parseInt(skip as string ,10)|| 0;
+        
+        //Query for products with pagination
+        const products = await Product.find({category:{$in:category}}).limit(parsedLimit).skip(parsedSkip) 
+        if(products.length> 0){
+            res.status(200).json({success:true,message:"Products found",products})
+        }else{
+            res.status(404).json({ success:false,message:"No products found for the specified category"})
+        }
+
+    } catch (error) {
+        next(createHttpError(500, "Unable to retrieve products"));
+    }
+}
 
 export {
     createProduct,
@@ -426,5 +451,6 @@ export {
     getProductByCategory,
     getSingleProduct,
     updateProduct,
-    deleteProductById
+    deleteProductById,
+    getProductByCategoryWithLimit
 }
