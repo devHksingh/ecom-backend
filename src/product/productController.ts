@@ -432,10 +432,18 @@ const getProductByCategoryWithLimit = async (req: Request, res: Response, next: 
         const parsedLimit = parseInt(limit as string, 10) || 10
         const parsedSkip = parseInt(skip as string, 10) || 0;
 
+        const totalProducts = await Product.find({ category: { $in: category } })
         //Query for products with pagination
         const products = await Product.find({ category: { $in: category } }).limit(parsedLimit).skip(parsedSkip)
         if (products.length > 0) {
-            res.status(200).json({ success: true, message: "Products found", products })
+            res.status(200).json({
+                success: true,
+                message: "Products found",
+                products,
+                total: totalProducts.length,
+                limit: parsedLimit,
+                skip: parsedSkip
+            })
         } else {
             res.status(404).json({ success: false, message: "No products found for the specified category" })
         }
@@ -449,11 +457,19 @@ const getAllProductsWithLimits = async (req: Request, res: Response, next: NextF
         const { limit = 10, skip = 0 } = req.query
         const parsedLimit = parseInt(limit as string, 10) || 10
         const parsedSkip = parseInt(skip as string, 10) || 0
+        const totalProducts = await Product.find()
 
         const products = await Product.find().limit(parsedLimit).skip(parsedSkip)
         if (products.length > 0) {
-            res.status(200).json({ success: true, message: "Product list fetch successfully", products })
-        }else{
+            res.status(200).json({
+                success: true,
+                message: "Product list fetch successfully",
+                products,
+                total: totalProducts.length,
+                limit: parsedLimit,
+                skip: parsedSkip
+            })
+        } else {
             next(createHttpError(404, "No products found "));
         }
     } catch (error) {
