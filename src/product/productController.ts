@@ -479,6 +479,7 @@ const getAllProductsWithLimits = async (req: Request, res: Response, next: NextF
 
 const getAllCategoryName = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        // Mongoose’s built-in .distinct() to get an array of unique categories
         const categories = await Product.distinct("category")
         if (!categories.length) {
             return next(createHttpError(404, "No categories found"));
