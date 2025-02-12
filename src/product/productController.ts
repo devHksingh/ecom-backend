@@ -477,6 +477,20 @@ const getAllProductsWithLimits = async (req: Request, res: Response, next: NextF
     }
 }
 
+const getAllCategoryName = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const categories = await Product.distinct("category")
+        if (!categories.length) {
+            return next(createHttpError(404, "No categories found"));
+        }
+
+        res.status(200).json({ success: true, categories });
+
+    } catch (error) {
+        next(createHttpError(500, "Unable to retrieve categories name"));
+    }
+}
+
 export {
     createProduct,
     getAllProducts,
@@ -485,5 +499,6 @@ export {
     updateProduct,
     deleteProductById,
     getProductByCategoryWithLimit,
-    getAllProductsWithLimits
+    getAllProductsWithLimits,
+    getAllCategoryName
 }
