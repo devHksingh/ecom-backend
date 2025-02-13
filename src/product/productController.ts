@@ -420,8 +420,7 @@ const deleteProductById = async (req: Request, res: Response, next: NextFunction
 
 const getProductByCategoryWithLimit = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { category } = req.body;
-        const { limit = 10, skip = 0 } = req.query
+        const { category, limit = 10, skip = 0 } = req.query;
         // validate category
 
         if (!category || !Array.isArray(category) || category.length === 0) {
