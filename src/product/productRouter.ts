@@ -20,7 +20,7 @@ productRouter.post('/register', authenticate, upload.fields([{ name: "productIma
 productRouter.patch('/update/:productId', authenticate, upload.fields([{ name: "productImage", maxCount: 1 }]), updateProduct)
 productRouter.get('/allProduct',  getAllProducts)
 productRouter.get('/getAllProductsWithLimits',  getAllProductsWithLimits)
-productRouter.get('/getProductByCategoryWithLimit',  getProductByCategoryWithLimit)
+productRouter.post('/getProductByCategoryWithLimit',  getProductByCategoryWithLimit)
 productRouter.get('/getAllCategoryName',  getAllCategoryName)
 productRouter.get('/getProductByCategory',  getProductByCategory)
 productRouter.get('/:productId',  getSingleProduct)
