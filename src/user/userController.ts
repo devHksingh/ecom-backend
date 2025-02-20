@@ -319,6 +319,9 @@ const getAlluserWithLimt = async(req: Request, res: Response, next: NextFunction
     try {
         const _req = req as AuthRequest
         const { _id, email, isLogin, isAccessTokenExp } = _req
+        const { limit = 10, skip = 0 } = req.query
+        const parsedLimit = parseInt(limit as string, 10) || 10
+        const parsedSkip = parseInt(skip as string, 10) || 0
         const user = await User.findById(_id).select('-password -refreshToken')
         if(!user){
             next(createHttpError(401, "User is already exist with this email id"))
@@ -330,7 +333,7 @@ const getAlluserWithLimt = async(req: Request, res: Response, next: NextFunction
             if(user.role === "user"){
                 next(createHttpError(401, 'you are unauthorize for this request.'))
             }
-            const allUsers = await User.find().select('-password -cardNumber -isLogin -refreshToken')
+            const allUsers = await User.find().select('-password -cardNumber -isLogin -refreshToken').limit(parsedLimit).skip(parsedSkip)
             let newAccessToken
             if (isAccessTokenExp) {
                 newAccessToken = user.generateAccessToken()
