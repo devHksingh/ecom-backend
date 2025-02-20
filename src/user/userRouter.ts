@@ -1,5 +1,5 @@
 import express from 'express'
-import { changePassword, createAdmin, createManager, createUser, getAlluser, getSingleuser, loginUser, logoutUser } from './userController'
+import { changePassword, createAdmin, createManager, createUser, getAlluser, getAlluserWithLimt, getSingleuser, loginUser, logoutUser } from './userController'
 import authenticate from '../middlewares/authMiddleware'
 
 
@@ -17,6 +17,7 @@ userRouter.post('/admin/register/manager', authenticate, createManager)
 // userRouter.post('/admin/login', loginUser)
 // userRouter.get('/admin/logout', authenticate, logoutUser)
 userRouter.get('/admin/getAlluser', authenticate, getAlluser)
+userRouter.get('/admin/getAlluserWithLimt', authenticate, getAlluserWithLimt)
 userRouter.get('/getuser', authenticate, getSingleuser)
 
 

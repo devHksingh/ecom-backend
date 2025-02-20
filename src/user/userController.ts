@@ -315,6 +315,38 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
     }
 }
 
+const getAlluserWithLimt = async(req: Request, res: Response, next: NextFunction)=>{
+    try {
+        const _req = req as AuthRequest
+        const { _id, email, isLogin, isAccessTokenExp } = _req
+        const user = await User.findById(_id).select('-password -refreshToken')
+        if(!user){
+            next(createHttpError(401, "User is already exist with this email id"))
+        }
+        if(user){
+            if(!user.isLogin){
+                next(createHttpError(401, 'you are unauthorize for this request.Kindly login first'))
+            }
+            if(user.role === "user"){
+                next(createHttpError(401, 'you are unauthorize for this request.'))
+            }
+            const allUsers = await User.find().select('-password -cardNumber -isLogin -refreshToken')
+            let newAccessToken
+            if (isAccessTokenExp) {
+                newAccessToken = user.generateAccessToken()
+            }
+            res.status(200).json({
+                success: true,
+                allUsers,
+                isAccessTokenExp,
+                accessToken: newAccessToken
+            })
+        }
+    } catch (error) {
+        next(createHttpError(500, 'unable to get all user info.'))
+    }
+}
+
 export {
     createUser,
     loginUser,
@@ -323,5 +355,6 @@ export {
     getAlluser,
     createManager,
     changePassword,
-    getSingleuser
+    getSingleuser,
+    getAlluserWithLimt
 }
