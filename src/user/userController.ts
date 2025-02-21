@@ -333,6 +333,7 @@ const getAlluserWithLimt = async(req: Request, res: Response, next: NextFunction
             if(user.role === "user"){
                 next(createHttpError(401, 'you are unauthorize for this request.'))
             }
+            const alluser = await User.find({ role: "user" }).select("-password -cardNumber -isLogin")
             const allUsers = await User.find().select('-password -cardNumber -isLogin -refreshToken').limit(parsedLimit).skip(parsedSkip)
             let newAccessToken
             if (isAccessTokenExp) {
@@ -341,6 +342,9 @@ const getAlluserWithLimt = async(req: Request, res: Response, next: NextFunction
             res.status(200).json({
                 success: true,
                 allUsers,
+                total:alluser.length,
+                limit:parsedLimit,
+                skip:parsedSkip,
                 isAccessTokenExp,
                 accessToken: newAccessToken
             })
