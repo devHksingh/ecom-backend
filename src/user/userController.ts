@@ -229,7 +229,7 @@ const getSingleuser = async (req: Request, res: Response, next: NextFunction) =>
         if (!user) {
             next(createHttpError(404, 'Unauthorize request .No user Found'))
         }
-        if(user){
+        if (user) {
             if (!user.isLogin) {
                 next(createHttpError(401, 'You are logout!.Kindly login first'))
             }
@@ -315,7 +315,7 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
     }
 }
 
-const getAlluserWithLimt = async(req: Request, res: Response, next: NextFunction)=>{
+const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const _req = req as AuthRequest
         const { _id, email, isLogin, isAccessTokenExp } = _req
@@ -323,17 +323,29 @@ const getAlluserWithLimt = async(req: Request, res: Response, next: NextFunction
         const parsedLimit = parseInt(limit as string, 10) || 10
         const parsedSkip = parseInt(skip as string, 10) || 0
         const user = await User.findById(_id).select('-password -refreshToken')
-        if(!user){
+        // let totalPages
+        // let currentPage 
+        // let nextPage
+        // let prevPage
+
+        if (!user) {
             next(createHttpError(401, "User is already exist with this email id"))
         }
-        if(user){
-            if(!user.isLogin){
+        if (user) {
+            if (!user.isLogin) {
                 next(createHttpError(401, 'you are unauthorize for this request.Kindly login first'))
             }
-            if(user.role === "user"){
+            if (user.role === "user") {
                 next(createHttpError(401, 'you are unauthorize for this request.'))
             }
             const alluser = await User.find({ role: "user" }).select("-password -cardNumber -isLogin")
+            const totalUsers = alluser.length + 1
+            const totalPages = Math.ceil(totalUsers / parsedLimit)
+
+            const currentPage = Math.floor(parsedSkip / parsedLimit) + 1
+            const nextPage = currentPage < totalPages ? currentPage + 1 : null
+            const prevPage = currentPage > 1 ? currentPage - 1 : null
+
             const allUsers = await User.find().select('-password -cardNumber -isLogin -refreshToken').limit(parsedLimit).skip(parsedSkip)
             let newAccessToken
             if (isAccessTokenExp) {
@@ -342,9 +354,13 @@ const getAlluserWithLimt = async(req: Request, res: Response, next: NextFunction
             res.status(200).json({
                 success: true,
                 allUsers,
-                total:alluser.length,
-                limit:parsedLimit,
-                skip:parsedSkip,
+                totalUsers,
+                totalPages,
+                currentPage,
+                nextPage,
+                prevPage,
+                limit: parsedLimit,
+                skip: parsedSkip,
                 isAccessTokenExp,
                 accessToken: newAccessToken
             })
