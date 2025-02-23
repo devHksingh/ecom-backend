@@ -323,10 +323,10 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
         const parsedLimit = parseInt(limit as string, 10) || 10
         const parsedSkip = parseInt(skip as string, 10) || 0
         const user = await User.findById(_id).select('-password -refreshToken')
-        // let totalPages
-        // let currentPage 
-        // let nextPage
-        // let prevPage
+        //  totalPages
+        //  currentPage 
+        //  nextPage
+        //  prevPage
 
         if (!user) {
             next(createHttpError(401, "User is already exist with this email id"))
