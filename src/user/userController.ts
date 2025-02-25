@@ -253,7 +253,7 @@ const createManager = async (req: Request, res: Response, next: NextFunction) =>
     const _req = req as AuthRequest
     const { _id, email, isLogin } = _req
     try {
-        const isvalidUser = await User.findById({ _id })
+        const isvalidUser = await User.findById({ _id }).select("password")
         if (isvalidUser) {
             if (isvalidUser.role === "admin") {
                 if (!isvalidUser.isLogin) {
@@ -370,6 +370,30 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
     }
 }
 
+const forcedLogout = async (req: Request, res: Response, next: NextFunction) => {
+    const { userId } = req.body
+    console.log(userId)
+    if(!userId ){
+        next(createHttpError(400, "User Id required!"))
+    }
+    try {
+        const user = await User.findById(userId).select("-password")
+        if (!user) {
+            next(createHttpError(404, "User not found"))
+        }
+        if (user) {
+            console.log(user)
+            user.isLogin = false
+            user.refreshToken = ""
+            await user.save({ validateBeforeSave: false })
+            res.status(201).json({ success: true, message: "User is successfully logout" })
+        }
+    } catch (error) {
+
+        next(createHttpError(500, "Internal server error while logout user"))
+    }
+}
+
 export {
     createUser,
     loginUser,
@@ -379,5 +403,6 @@ export {
     createManager,
     changePassword,
     getSingleuser,
-    getAlluserWithLimt
+    getAlluserWithLimt,
+    forcedLogout
 }
