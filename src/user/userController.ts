@@ -338,14 +338,36 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
             if (user.role === "user") {
                 next(createHttpError(401, 'you are unauthorize for this request.'))
             }
-            const alluser = await User.find({ role: "user" }).select("-password -cardNumber -isLogin")
+            // const alluser = await User.find({ role: "user" }).select("-password -cardNumber -isLogin -refreshToken")
+            const alluser = await User.find().select("-password -cardNumber -isLogin -refreshToken")
             const totalUsers = alluser.length + 1
             const totalPages = Math.ceil(totalUsers / parsedLimit)
 
             const currentPage = Math.floor(parsedSkip / parsedLimit) + 1
             const nextPage = currentPage < totalPages ? currentPage + 1 : null
             const prevPage = currentPage > 1 ? currentPage - 1 : null
+            /*
+            number of users
+            number of manager
+            number of admin
+            */
+            let numberOfUser
 
+            if (alluser) {
+
+                 numberOfUser = alluser.reduce((acc, user) => {
+                    if (user.role === "user") {
+                        acc.totalUser += 1
+                    } else if (user.role === "admin") {
+                        acc.totalAdmin += 1
+                    } else if (user.role === "manager") {
+                        acc.totalManager += 1
+                    }
+                    return acc
+                  }, { totalUser: 0, totalAdmin: 0, totalManager: 0 })
+                
+
+            }
             const allUsers = await User.find().select('-password -cardNumber -isLogin -refreshToken').limit(parsedLimit).skip(parsedSkip)
             let newAccessToken
             if (isAccessTokenExp) {
@@ -353,6 +375,10 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
             }
             res.status(200).json({
                 success: true,
+                numberOfUser,
+                totalUser:numberOfUser?.totalUser,
+                totalAdmin:numberOfUser?.totalAdmin,
+                totalManager:numberOfUser?.totalManager,
                 allUsers,
                 totalUsers,
                 totalPages,
@@ -373,7 +399,7 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
 const forcedLogout = async (req: Request, res: Response, next: NextFunction) => {
     const { userId } = req.body
     console.log(userId)
-    if(!userId ){
+    if (!userId) {
         next(createHttpError(400, "User Id required!"))
     }
     try {
