@@ -352,10 +352,10 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
             number of admin
             */
             let numberOfUser
-
+            let last30Days
             if (alluser) {
 
-                 numberOfUser = alluser.reduce((acc, user) => {
+                numberOfUser = alluser.reduce((acc, user) => {
                     if (user.role === "user") {
                         acc.totalUser += 1
                     } else if (user.role === "admin") {
@@ -364,8 +364,31 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
                         acc.totalManager += 1
                     }
                     return acc
-                  }, { totalUser: 0, totalAdmin: 0, totalManager: 0 })
-                
+                }, { totalUser: 0, totalAdmin: 0, totalManager: 0 })
+
+                last30Days = alluser.reduce((acc, user) => {
+                    if (user.role = "user") {
+                        const today = new Date()
+                        const thirtyDaysAgoDate = new Date()
+                        thirtyDaysAgoDate.setDate(today.getDate() - 30)
+                        // console.log(new Date(user.createdAt))
+                        const date = new Date(user.createdAt)
+                        if (date >= thirtyDaysAgoDate && date <= today) {
+                            acc.usersAdded += 1
+                        }
+                    } else if (user.role === "manager") {
+                        const today = new Date()
+                        const thirtyDaysAgoDate = new Date()
+                        thirtyDaysAgoDate.setDate(today.getDate() - 30)
+                        const date = new Date(user.createdAt)
+                        if (date >= thirtyDaysAgoDate && date <= today) {
+                            acc.managerAdded += 1
+                        }
+                    }
+                    return acc
+                }, { usersAdded: 0, managerAdded: 0 })
+                console.log("last30Days :", last30Days);
+
 
             }
             const allUsers = await User.find().select('-password -cardNumber -isLogin -refreshToken').limit(parsedLimit).skip(parsedSkip)
@@ -376,9 +399,10 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
             res.status(200).json({
                 success: true,
                 numberOfUser,
-                totalUser:numberOfUser?.totalUser,
-                totalAdmin:numberOfUser?.totalAdmin,
-                totalManager:numberOfUser?.totalManager,
+                lastThirtyDaysUserCount: last30Days,
+                totalUser: numberOfUser?.totalUser,
+                totalAdmin: numberOfUser?.totalAdmin,
+                totalManager: numberOfUser?.totalManager,
                 allUsers,
                 totalUsers,
                 totalPages,
