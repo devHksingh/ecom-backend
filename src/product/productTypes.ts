@@ -8,5 +8,6 @@ export interface Products {
     price: number,
     salePrice: number,
     totalStock: number,
-    currency: string
+    currency: string,
+    createdAt:string
 }
