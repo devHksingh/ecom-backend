@@ -8,6 +8,7 @@ import { Product } from './productModel'
 import { z } from 'zod'
 import { createProductSchema } from './productZodSchema'
 import fs from 'node:fs'
+import { title } from 'node:process'
 
 
 
@@ -436,7 +437,7 @@ const getProductByCategoryWithLimit = async (req: Request, res: Response, next: 
         const parsedLimit = parseInt(limit as string, 10) || 10
         const parsedSkip = parseInt(skip as string, 10) || 0;
 
-        const totalProducts = await Product.find({ category: { $in: category } })
+        const totalProducts = await Product.find({ category: { $in: category } }).sort({ title: 1 })
         const totalProductAtCategory = totalProducts.length
         const totalPages = Math.ceil(totalProductAtCategory / parsedLimit)
 
@@ -472,12 +473,15 @@ const getAllProductsWithLimits = async (req: Request, res: Response, next: NextF
         const parsedLimit = parseInt(limit as string, 10) || 10
         const parsedSkip = parseInt(skip as string, 10) || 0
         const totalProducts = await Product.find()
+
         const totalProductsLength = totalProducts.length
         const totalPages = Math.ceil(totalProductsLength / parsedLimit)
         const currentPage = Math.floor(parsedSkip / parsedLimit) + 1
         const nextPage = currentPage < totalPages ? currentPage + 1 : null
         const prevPage = currentPage > 1 ? currentPage - 1 : null
-        const products = await Product.find().limit(parsedLimit).skip(parsedSkip)
+        // orts the results by the title field in ascending
+        const products = await Product.find().limit(parsedLimit).skip(parsedSkip).sort({ title: 1 })
+
 
         /*
             1. Get number of product added last month
@@ -516,8 +520,8 @@ const getAllCategoryName = async (req: Request, res: Response, next: NextFunctio
             return next(createHttpError(404, "No categories found"));
         }
         const sortedCategories = categories.sort()
-        res.status(200).json({ success: true, categories:sortedCategories });
-        
+        res.status(200).json({ success: true, categories: sortedCategories });
+
     } catch (error) {
         next(createHttpError(500, "Unable to retrieve categories name"));
     }
