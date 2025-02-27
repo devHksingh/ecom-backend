@@ -500,13 +500,15 @@ const getAllProductsWithLimits = async (req: Request, res: Response, next: NextF
 
         const productStockStatus = totalProducts.reduce((acc, product) => {
             if (product.totalStock > 0) {
-                acc.stockQuantaty += 1
+                acc.stockQuantaty += product.totalStock
             }
             if (product.totalStock >= 20) {
                 acc.inStock += 1
-            } else if (product.totalStock < 20) {
+            }
+            if (product.totalStock < 20) {
                 acc.lowStock += 1
-            } else if (product.totalStock === 0) {
+            }
+            if (product.totalStock === 0) {
                 acc.outOfStock += 1
             }
             return acc
