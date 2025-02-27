@@ -10,6 +10,7 @@ import { createProductSchema } from './productZodSchema'
 import fs from 'node:fs'
 
 
+
 const createProduct = async (req: Request, res: Response, next: NextFunction) => {
     // check req formate from zod
     const isvalidReq = createProductSchema.parse(req.body)
@@ -24,7 +25,7 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
         salePrice,
         totalStock } = isvalidReq
 
-    // check isvalid user
+    // check isvalid user0
     const _req = req as AuthRequest
     const { _id, email, isLogin, isAccessTokenExp } = _req
     try {
@@ -86,7 +87,7 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
 
             }
             // split category
-            const ctegoryArr = category.split(' ')
+            const ctegoryArr = category.split(',')
 
             const newProduct = await Product.create({
                 title,
@@ -318,11 +319,13 @@ const updateProduct = async (req: Request, res: Response, next: NextFunction) =>
             console.log(optimizeUrl)
         }
 
+        // split category
+        const ctegoryArr = category.split(',')
 
         // Step 7: Update product fields
         productDetail.title = title || productDetail.title;
         productDetail.brand = brand || productDetail.brand;
-        productDetail.category = category || productDetail.category;
+        productDetail.category = ctegoryArr || productDetail.category;
         productDetail.currency = currency || productDetail.currency;
         productDetail.description = description || productDetail.description;
         productDetail.price = price || productDetail.price;
@@ -379,9 +382,10 @@ const deleteProductById = async (req: Request, res: Response, next: NextFunction
         const products = await Product.find()
         // console.log("All products :",products)
         // console.log("All products :",products.length)
-        if (products.length < 40) {
-            return next(createHttpError(400, 'Not enough product to dispaly'))
-        }
+        // TODO: Uncomment below line in production
+        // if (products.length < 40) {
+        //     return next(createHttpError(400, 'Not enough product to dispaly'))
+        // }
 
 
         //  Verify product
@@ -420,7 +424,8 @@ const deleteProductById = async (req: Request, res: Response, next: NextFunction
 
 const getProductByCategoryWithLimit = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { category, limit = 10, skip = 0 } = req.query;
+        const { category, limit = 10, skip = 0 } = req.body;
+        // const { limit = 10, skip = 0 } = req.query
         // validate category
 
         if (!category || !Array.isArray(category) || category.length === 0) {
@@ -432,6 +437,12 @@ const getProductByCategoryWithLimit = async (req: Request, res: Response, next: 
         const parsedSkip = parseInt(skip as string, 10) || 0;
 
         const totalProducts = await Product.find({ category: { $in: category } })
+        const totalProductAtCategory = totalProducts.length
+        const totalPages = Math.ceil(totalProductAtCategory / parsedLimit)
+
+        const currentPage = Math.floor(parsedSkip / parsedLimit) + 1
+        const nextPage = currentPage < totalPages ? currentPage + 1 : null
+        const prevPage = currentPage > 1 ? currentPage - 1 : null
         //Query for products with pagination
         const products = await Product.find({ category: { $in: category } }).limit(parsedLimit).skip(parsedSkip)
         if (products.length > 0) {
@@ -439,7 +450,11 @@ const getProductByCategoryWithLimit = async (req: Request, res: Response, next: 
                 success: true,
                 message: "Products found",
                 products,
-                total: totalProducts.length,
+                total: totalProductAtCategory,
+                totalPages,
+                currentPage,
+                nextPage,
+                prevPage,
                 limit: parsedLimit,
                 skip: parsedSkip
             })
@@ -457,14 +472,31 @@ const getAllProductsWithLimits = async (req: Request, res: Response, next: NextF
         const parsedLimit = parseInt(limit as string, 10) || 10
         const parsedSkip = parseInt(skip as string, 10) || 0
         const totalProducts = await Product.find()
-
+        const totalProductsLength = totalProducts.length
+        const totalPages = Math.ceil(totalProductsLength / parsedLimit)
+        const currentPage = Math.floor(parsedSkip / parsedLimit) + 1
+        const nextPage = currentPage < totalPages ? currentPage + 1 : null
+        const prevPage = currentPage > 1 ? currentPage - 1 : null
         const products = await Product.find().limit(parsedLimit).skip(parsedSkip)
+
+        /*
+            1. Get number of product added last month
+            2. Get stock Status InStock/OutOfStock/Low Stock
+        */
+        // const numberOfProductAddLastMonth = totalProducts.reduce((acc,product)=>{
+
+        // },0)
+
         if (products.length > 0) {
             res.status(200).json({
                 success: true,
                 message: "Product list fetch successfully",
                 products,
-                total: totalProducts.length,
+                totalPages,
+                currentPage,
+                nextPage,
+                prevPage,
+                total: totalProductsLength,
                 limit: parsedLimit,
                 skip: parsedSkip
             })
@@ -483,9 +515,9 @@ const getAllCategoryName = async (req: Request, res: Response, next: NextFunctio
         if (!categories.length) {
             return next(createHttpError(404, "No categories found"));
         }
-
-        res.status(200).json({ success: true, categories });
-
+        const sortedCategories = categories.sort()
+        res.status(200).json({ success: true, categories:sortedCategories });
+        
     } catch (error) {
         next(createHttpError(500, "Unable to retrieve categories name"));
     }
