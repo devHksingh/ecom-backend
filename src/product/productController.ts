@@ -8,7 +8,7 @@ import { Product } from './productModel'
 import { z } from 'zod'
 import { createProductSchema } from './productZodSchema'
 import fs from 'node:fs'
-import { title } from 'node:process'
+
 
 
 
@@ -479,7 +479,7 @@ const getAllProductsWithLimits = async (req: Request, res: Response, next: NextF
         const currentPage = Math.floor(parsedSkip / parsedLimit) + 1
         const nextPage = currentPage < totalPages ? currentPage + 1 : null
         const prevPage = currentPage > 1 ? currentPage - 1 : null
-        // orts the results by the title field in ascending
+        // sorts the results by the title field in ascending
         const products = await Product.find().limit(parsedLimit).skip(parsedSkip).sort({ title: 1 })
 
 
@@ -487,15 +487,39 @@ const getAllProductsWithLimits = async (req: Request, res: Response, next: NextF
             1. Get number of product added last month
             2. Get stock Status InStock/OutOfStock/Low Stock
         */
-        // const numberOfProductAddLastMonth = totalProducts.reduce((acc,product)=>{
+        const numberOfProductAddLastMonth = totalProducts.reduce((acc, product) => {
+            const todayDate = new Date()
+            const thirtyDaysAgoDate = new Date()
+            thirtyDaysAgoDate.setDate(todayDate.getDate() - 30)
+            const date = new Date(product.createdAt)
+            if (date >= thirtyDaysAgoDate && date <= todayDate) {
+                acc += 1
+            }
+            return acc
+        }, 0)
 
-        // },0)
+        const productStockStatus = totalProducts.reduce((acc, product) => {
+            if (product.totalStock > 0) {
+                acc.stockQuantaty += 1
+            }
+            if (product.totalStock >= 20) {
+                acc.inStock += 1
+            } else if (product.totalStock < 20) {
+                acc.lowStock += 1
+            } else if (product.totalStock === 0) {
+                acc.outOfStock += 1
+            }
+            return acc
+
+        }, { inStock: 0, outOfStock: 0, lowStock: 0, stockQuantaty: 0 })
 
         if (products.length > 0) {
             res.status(200).json({
                 success: true,
                 message: "Product list fetch successfully",
                 products,
+                lastThirtyDaysProductCount: numberOfProductAddLastMonth,
+                productStockStatus,
                 totalPages,
                 currentPage,
                 nextPage,
