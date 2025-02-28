@@ -441,6 +441,38 @@ const getProductByCategoryWithLimit = async (req: Request, res: Response, next: 
         const totalProductAtCategory = totalProducts.length
         const totalPages = Math.ceil(totalProductAtCategory / parsedLimit)
 
+        /*
+            1. Get number of product added last month
+            2. Get stock Status InStock/OutOfStock/Low Stock
+        */
+        const numberOfProductAddLastMonth = totalProducts.reduce((acc, product) => {
+            const thirtyDaysAgoDate = new Date()
+            const todayDate = new Date()
+            thirtyDaysAgoDate.setDate(todayDate.getDate() - 30)
+            const productDate = new Date(product.createdAt)
+            if (productDate >= thirtyDaysAgoDate && productDate <= todayDate) {
+                acc += 1
+            }
+            return acc
+        }, 0)
+
+        const productStockStatus = totalProducts.reduce((acc, product) => {
+            if (product.totalStock > 0) {
+                acc.stockQuantaty += product.totalStock
+            }
+            if (product.totalStock >= 20) {
+                acc.inStock += 1
+            }
+            if (product.totalStock < 20) {
+                acc.lowStock += 1
+            }
+            if (product.totalStock === 0) {
+                acc.outOfStock += 1
+            }
+            return acc
+
+        }, { inStock: 0, outOfStock: 0, lowStock: 0, stockQuantaty: 0 })
+
         const currentPage = Math.floor(parsedSkip / parsedLimit) + 1
         const nextPage = currentPage < totalPages ? currentPage + 1 : null
         const prevPage = currentPage > 1 ? currentPage - 1 : null
@@ -452,6 +484,8 @@ const getProductByCategoryWithLimit = async (req: Request, res: Response, next: 
                 message: "Products found",
                 products,
                 total: totalProductAtCategory,
+                lastThirtyDaysProductCount: numberOfProductAddLastMonth,
+                productStockStatus,
                 totalPages,
                 currentPage,
                 nextPage,
@@ -514,6 +548,9 @@ const getAllProductsWithLimits = async (req: Request, res: Response, next: NextF
             return acc
 
         }, { inStock: 0, outOfStock: 0, lowStock: 0, stockQuantaty: 0 })
+
+        console.log("productStockStatus :", productStockStatus);
+
 
         if (products.length > 0) {
             res.status(200).json({
