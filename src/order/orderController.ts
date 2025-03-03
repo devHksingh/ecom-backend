@@ -30,6 +30,7 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
         const _req = req as AuthRequest
         const userId = _req._id
         const isAccessTokenExp = _req.isAccessTokenExp
+        let productPrice 
 
         // Validate product existence and stock
         const product = await Product.findById(productId)
@@ -44,9 +45,10 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
             }
             // Calculate total price
             totalPrice = (product.price * quantity) - product.salePrice;
+            productPrice =(product.price) -(product.salePrice)
         }
         // Get user details
-        const user = await User.findById(userId).select("-password")
+        const user = await User.findById(userId).select("-password -refreshToken")
         if (!user) {
             next(createHttpError(404, "User not found"))
         }
@@ -61,8 +63,18 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
 
             // Create order
             const order = await Order.create({
-                user: [userId],
-                product: [productId],
+                // user: [userId],
+                productDetail:{
+                    name:product?.title,
+                    price:productPrice,
+                    imageUrl:product?.image,
+                    productId
+                },
+                userDetails:{
+                    userName:user.name,
+                    userEmail:user.email
+                },
+                // product: [productId],
                 quantity,
                 totalPrice,
                 trackingId,
@@ -323,15 +335,15 @@ const getOrderByUserEmail = async (req: Request, res: Response, next: NextFuncti
             return next(createHttpError(400, 'Unauthorerize request'))
         }
         const customer = await User.findOne({ email: customerEmail }).select('-password')
-        if(!customer){
+        if (!customer) {
             return next(createHttpError(400, 'No user Found'))
         }
-        const order = await Order.find({user:customer.id})
+        const order = await Order.find({ user: customer.id })
         let accessToken
         if (isAccessTokenExp) {
             accessToken = user.generateAccessToken()
         }
-        if(!order.length){
+        if (!order.length) {
             res.status(404).json({
                 success: false,
                 message: "No orders found",
@@ -339,7 +351,7 @@ const getOrderByUserEmail = async (req: Request, res: Response, next: NextFuncti
             });
             return;
         }
-        if(order){
+        if (order) {
             res.status(200).json({
                 success: true,
                 message: 'orders list fetch successfully',
@@ -349,6 +361,67 @@ const getOrderByUserEmail = async (req: Request, res: Response, next: NextFuncti
             return
         }
 
+    } catch (error) {
+        return next(createHttpError(500, "Error occured while getting order list"));
+    }
+}
+
+const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: NextFunction) => {
+    /*
+    * Only admin and manager are allowed to get all order details
+    */
+    try {
+        const _req = req as AuthRequest
+        const userId = _req._id
+        const isAccessTokenExp = _req.isAccessTokenExp
+        const { limit, skip } = req.params
+        const parsedLimit = Number(limit)
+        const parsedSkip = Number(skip)
+        //    verify user
+        const user = await User.findById(userId)
+        if (!user) {
+            return next(createHttpError(401, "Invalid request. User not found"));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(400, 'You have to login First!'))
+        }
+
+        if (user.role !== "admin" && user.role !== "manager") {
+            return next(createHttpError(400, 'Unauthorerize request'))
+        }
+        const orders = await Order.find()
+        // Handle access token expiration
+        let accessToken
+        const totalOrders = orders.length
+        const thirtyDaysAgoDate = new Date()
+        thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30)
+        const recentOrders = await Order.find({ createdAt: { gte: thirtyDaysAgoDate } })
+
+        const totalOdersWithLimitAndSkip = await Order.find().limit(parsedLimit).skip(parsedSkip)
+         
+
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken()
+        }
+        if (!orders.length) {
+            res.status(404).json({
+                success: false,
+                message: "No orders found",
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            });
+            return;
+        }
+
+
+        if (orders) {
+            res.status(200).json({
+                success: true,
+                message: 'orders list fetch successfully',
+                orders,
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            })
+            return
+        }
     } catch (error) {
         return next(createHttpError(500, "Error occured while getting order list"));
     }
@@ -364,5 +437,6 @@ export {
     getAllOrder,
     getSingleOrder,
     getOrderByUserId,
-    getOrderByUserEmail
+    getOrderByUserEmail,
+    getAllOrderByLimitAndSkip
 }
