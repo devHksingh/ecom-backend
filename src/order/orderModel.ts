@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Orders } from "./orderTypes";
 
 
+
 const orderSchema = new mongoose.Schema<Orders>({
 
     orderStatus: {
@@ -33,16 +34,29 @@ const orderSchema = new mongoose.Schema<Orders>({
         default: 1,
         required: true,
     },
-    user: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+    // user: [{
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "User",
 
-    }],
-    product: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product"
-    }],
-    
+    // }],
+    // product: [{
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "Product"
+    // }],
+    productDetail: {
+        name: String,
+        price: Number,
+        imageUrl: String,
+        productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product"
+        }
+    },
+    userDetails:{
+        userName:String,
+        userEmail:String
+    }
+
 }, { timestamps: true })
 
 export const Order = mongoose.model('Order', orderSchema)
