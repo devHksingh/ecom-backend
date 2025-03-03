@@ -1,9 +1,11 @@
 export interface Orders {
     orderStatus: string,
     trackingId: string,
-    user: [],
-    product: [],
+    // user: [],
+    // product: [],
     orderPlaceOn: Date,
     totalPrice: number,
-    quantity: number
+    quantity: number,
+    productDetail:{},
+    userDetails:{}
 }
