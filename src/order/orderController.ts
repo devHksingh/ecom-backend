@@ -422,7 +422,13 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         // convert object into array with sorting in descring order
 
         const saleRecordsArry = Object.entries(productSaleRecords).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
-        console.log("saleRecordsArry", saleRecordsArry);
+        console.log("saleRecordsArry", totalOdersWithLimitAndSkip.length);
+        // Get top 5 most and least bought products
+        const top5MostBought = saleRecordsArry.slice(0, 5);
+        const top5LeastBought = saleRecordsArry.slice(-5);
+
+        // console.log("Top 5 Most Bought Products:", top5MostBought);
+        // console.log("Top 5 Least Bought Products:", top5LeastBought);
         if (isAccessTokenExp) {
             accessToken = user.generateAccessToken()
         }
@@ -436,11 +442,15 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         }
 
 
-        if (orders) {
+        if (orders && totalOdersWithLimitAndSkip) {
             res.status(200).json({
                 success: true,
                 message: 'orders list fetch successfully',
-                orders,
+                totalOrdersArr: totalOdersWithLimitAndSkip,
+                past30DaysOrders:recentOrders,
+                saleRecordsArry,
+                top5MostBought,
+                top5LeastBought,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
             })
             return
