@@ -30,7 +30,7 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
         const _req = req as AuthRequest
         const userId = _req._id
         const isAccessTokenExp = _req.isAccessTokenExp
-        let productPrice 
+        let productPrice
 
         // Validate product existence and stock
         const product = await Product.findById(productId)
@@ -45,7 +45,7 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
             }
             // Calculate total price
             totalPrice = (product.price * quantity) - product.salePrice;
-            productPrice =(product.price) -(product.salePrice)
+            productPrice = (product.price) - (product.salePrice)
         }
         // Get user details
         const user = await User.findById(userId).select("-password -refreshToken")
@@ -64,15 +64,15 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
             // Create order
             const order = await Order.create({
                 // user: [userId],
-                productDetail:{
-                    name:product?.title,
-                    price:productPrice,
-                    imageUrl:product?.image,
+                productDetail: {
+                    name: product?.title,
+                    price: productPrice,
+                    imageUrl: product?.image,
                     productId
                 },
-                userDetails:{
-                    userName:user.name,
-                    userEmail:user.email
+                userDetails: {
+                    userName: user.name,
+                    userEmail: user.email
                 },
                 // product: [productId],
                 quantity,
@@ -374,7 +374,10 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         const _req = req as AuthRequest
         const userId = _req._id
         const isAccessTokenExp = _req.isAccessTokenExp
-        const { limit, skip } = req.params
+        // console.log("req.params",req.params);
+        // console.log("req.query",req.query);
+
+        const { limit = 5, skip = 0 } = req.query
         const parsedLimit = Number(limit)
         const parsedSkip = Number(skip)
         //    verify user
@@ -390,16 +393,36 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             return next(createHttpError(400, 'Unauthorerize request'))
         }
         const orders = await Order.find()
+
+
         // Handle access token expiration
         let accessToken
         const totalOrders = orders.length
         const thirtyDaysAgoDate = new Date()
         thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30)
-        const recentOrders = await Order.find({ createdAt: { gte: thirtyDaysAgoDate } })
-
+        const recentOrders = await Order.find({ createdAt: { $gte: thirtyDaysAgoDate } })
+        // console.log("recentOrders raw",recentOrders);
         const totalOdersWithLimitAndSkip = await Order.find().limit(parsedLimit).skip(parsedSkip)
-         
 
+        // cal top 5 most and least buy product
+
+
+        const productSaleRecords = orders.reduce((acc, order) => {
+            const productName = order.productDetail.name
+            const productQuantity = order.quantity
+            if (!acc[productName]) {
+                acc[productName] = 0
+            }
+            acc[productName] += productQuantity
+            return acc
+        }, {} as Record<string, number>)
+
+        // console.log("productSaleRecords", productSaleRecords);
+
+        // convert object into array with sorting in descring order
+
+        const saleRecordsArry = Object.entries(productSaleRecords).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+        console.log("saleRecordsArry", saleRecordsArry);
         if (isAccessTokenExp) {
             accessToken = user.generateAccessToken()
         }
@@ -438,5 +461,6 @@ export {
     getSingleOrder,
     getOrderByUserId,
     getOrderByUserEmail,
+
     getAllOrderByLimitAndSkip
 }
