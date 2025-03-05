@@ -410,25 +410,34 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         const productSaleRecords = orders.reduce((acc, order) => {
             const productName = order.productDetail.name
             const productQuantity = order.quantity
+            const orderDate = order.createdAt
             if (!acc[productName]) {
-                acc[productName] = 0
+                acc[productName]={
+                    quantity:0,
+                    date:""
+                }
             }
-            acc[productName] += productQuantity
-            return acc
-        }, {} as Record<string, number>)
+            acc[productName].quantity += productQuantity
+            acc[productName].date =new Date(orderDate).toLocaleDateString()
 
-        // console.log("productSaleRecords", productSaleRecords);
+            return acc
+        }, {} as Record<string, {quantity:number,date:string}>)
+
+        console.log("productSaleRecords", productSaleRecords);
 
         // convert object into array with sorting in descring order
 
-        const saleRecordsArry = Object.entries(productSaleRecords).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+        const saleRecordsArry = Object.entries(productSaleRecords).map(([name, value]) => ({ name, value })).sort(
+            (a,b)=> b.value.quantity -a.value.quantity
+        )
         console.log("saleRecordsArry", totalOdersWithLimitAndSkip.length);
+        console.log("saleRecordsArry", saleRecordsArry);
         // Get top 5 most and least bought products
         const top5MostBought = saleRecordsArry.slice(0, 5);
         const top5LeastBought = saleRecordsArry.slice(-5);
 
-        // console.log("Top 5 Most Bought Products:", top5MostBought);
-        // console.log("Top 5 Least Bought Products:", top5LeastBought);
+        console.log("Top 5 Most Bought Products:", top5MostBought);
+        console.log("Top 5 Least Bought Products:", top5LeastBought);
         if (isAccessTokenExp) {
             accessToken = user.generateAccessToken()
         }
