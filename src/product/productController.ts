@@ -264,13 +264,13 @@ const updateProduct = async (req: Request, res: Response, next: NextFunction) =>
             const img_url = productDetail.image.split('?')[0]; // Remove query parameters
             const arr = img_url.split('/');
             oldPublicId = `${arr.at(-2)}/${arr.at(-1)}`;
-            console.log('Old Image Public ID:', oldPublicId);
+            // console.log('Old Image Public ID:', oldPublicId);
         }
 
         // Step 6: Handle new files (Cloudinary upload)
         const newFiles = req.files as { [fieldname: string]: Express.Multer.File[] };
         if (newFiles.productImage) {
-            console.log(newFiles.productImage);
+            // console.log(newFiles.productImage);
 
             // const file = newFiles.productImage[0];
             const fileName = newFiles.productImage[0].filename
@@ -286,7 +286,7 @@ const updateProduct = async (req: Request, res: Response, next: NextFunction) =>
                 folder: "products-image"
             })
             if (cloudinaryResponse) {
-                console.log(cloudinaryResponse["public_id"]);
+                // console.log(cloudinaryResponse["public_id"]);
 
                 const public_id = cloudinaryResponse["public_id"]
                 // Optimize delivery by resizing and applying auto-format and auto-quality
@@ -303,7 +303,7 @@ const updateProduct = async (req: Request, res: Response, next: NextFunction) =>
                         }
                     ]
                 })
-                console.log(typeof (optimizeUrl));
+                // console.log(typeof (optimizeUrl));
 
 
             }
@@ -317,7 +317,7 @@ const updateProduct = async (req: Request, res: Response, next: NextFunction) =>
 
             }
 
-            console.log(optimizeUrl)
+            // console.log(optimizeUrl)
         }
 
         // split category
@@ -400,7 +400,7 @@ const deleteProductById = async (req: Request, res: Response, next: NextFunction
             const img_url = productDetail.image.split('?')[0]; // Remove query parameters
             const arr = img_url.split('/');
             oldPublicId = `${arr.at(-2)}/${arr.at(-1)}`;
-            console.log('Old Image Public ID:', oldPublicId);
+            // console.log('Old Image Public ID:', oldPublicId);
         }
         //  delete img scr from cloudnary
         await cloudinary.uploader.destroy(oldPublicId)
@@ -549,7 +549,7 @@ const getAllProductsWithLimits = async (req: Request, res: Response, next: NextF
 
         }, { inStock: 0, outOfStock: 0, lowStock: 0, stockQuantaty: 0 })
 
-        console.log("productStockStatus :", productStockStatus);
+        // console.log("productStockStatus :", productStockStatus);
 
 
         if (products.length > 0) {

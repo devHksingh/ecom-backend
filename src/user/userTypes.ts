@@ -13,4 +13,5 @@ export interface Users {
     isPasswordCorrect(password: string): Promise<boolean>;
     generateAccessToken(): string;
     generateRefreshToken(): string;
+    createdAt:string
 }

@@ -340,7 +340,7 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
             }
             // const alluser = await User.find({ role: "user" }).select("-password -cardNumber -isLogin -refreshToken")
             const alluser = await User.find().select("-password -cardNumber -isLogin -refreshToken")
-            const totalUsers = alluser.length + 1
+            const totalUsers = alluser.length 
             const totalPages = Math.ceil(totalUsers / parsedLimit)
 
             const currentPage = Math.floor(parsedSkip / parsedLimit) + 1
@@ -372,6 +372,7 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
                         const thirtyDaysAgoDate = new Date()
                         thirtyDaysAgoDate.setDate(today.getDate() - 30)
                         // console.log(new Date(user.createdAt))
+                        console.log("new Date(user.createdAt)" ,new Date(user.createdAt).toLocaleString());
                         const date = new Date(user.createdAt)
                         if (date >= thirtyDaysAgoDate && date <= today) {
                             acc.usersAdded += 1
@@ -381,6 +382,8 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
                         const thirtyDaysAgoDate = new Date()
                         thirtyDaysAgoDate.setDate(today.getDate() - 30)
                         const date = new Date(user.createdAt)
+                        // console.log("new Date(user.createdAt)" ,new Date(user.createdAt).toLocaleString());
+                        
                         if (date >= thirtyDaysAgoDate && date <= today) {
                             acc.managerAdded += 1
                         }
