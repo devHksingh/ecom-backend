@@ -461,6 +461,7 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
                 top5MostBought,
                 top5LeastBought,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
+                isAccessTokenExp
             })
             return
         }
