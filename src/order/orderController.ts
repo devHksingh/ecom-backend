@@ -493,6 +493,7 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
                 saleRecordsArry,
                 top5MostBought,
                 top5LeastBought,
+                totalOrders,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
                 isAccessTokenExp
             })
