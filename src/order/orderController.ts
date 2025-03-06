@@ -403,31 +403,31 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         const recentOrders = await Order.find({ createdAt: { $gte: thirtyDaysAgoDate } })
         // console.log("recentOrders raw",recentOrders);
         const totalOdersWithLimitAndSkip = await Order.find().limit(parsedLimit).skip(parsedSkip)
-
+        totalOdersWithLimitAndSkip.sort((a, b) => (b.totalPrice - a.totalPrice))
         // cal top 5 most and least buy product
 
 
         const productSaleRecords = orders.reduce((acc, order) => {
             const productName = order.productDetail.name
             const productQuantity = order.quantity
-            const orderDate = order.createdAt
+            // const orderDate = order.createdAt
             if (!acc[productName]) {
                 acc[productName] = {
                     quantity: 0,
-                    date: "",
+                    // date: "",
                     price: 0,
-                    orderStatus: "",
+                    // orderStatus: "",
                     url: ""
                 }
             }
             acc[productName].quantity += productQuantity
-            acc[productName].date = new Date(orderDate).toLocaleDateString()
-            acc[productName].price = order.totalPrice
-            acc[productName].orderStatus = order.orderStatus
+            // acc[productName].date = new Date(orderDate).toLocaleDateString()
+            acc[productName].price += order.totalPrice
+            // acc[productName].orderStatus = order.orderStatus
             acc[productName].url = order.productDetail.imageUrl
 
             return acc
-        }, {} as Record<string, { quantity: number, date: string, price: number, orderStatus: string, url: string }>)
+        }, {} as Record<string, { quantity: number, price: number,  url: string }>)
 
         const productOrderStatusCount = orders.reduce((acc, order) => {
             switch (order.orderStatus) {
