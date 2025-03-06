@@ -412,32 +412,62 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             const productQuantity = order.quantity
             const orderDate = order.createdAt
             if (!acc[productName]) {
-                acc[productName]={
-                    quantity:0,
-                    date:""
+                acc[productName] = {
+                    quantity: 0,
+                    date: "",
+                    price: 0,
+                    orderStatus: "",
+                    url: ""
                 }
             }
             acc[productName].quantity += productQuantity
-            acc[productName].date =new Date(orderDate).toLocaleDateString()
+            acc[productName].date = new Date(orderDate).toLocaleDateString()
+            acc[productName].price = order.totalPrice
+            acc[productName].orderStatus = order.orderStatus
+            acc[productName].url = order.productDetail.imageUrl
 
             return acc
-        }, {} as Record<string, {quantity:number,date:string}>)
+        }, {} as Record<string, { quantity: number, date: string, price: number, orderStatus: string, url: string }>)
 
-        console.log("productSaleRecords", productSaleRecords);
+        const productOrderStatusCount = orders.reduce((acc, order) => {
+            switch (order.orderStatus) {
+                case "PROCESSED":
+                    acc.processed += 1
+                    break;
+                case "DELIVERED":
+                    acc.delivered += 1
+                    break;
+                case "SHIPPED":
+                    acc.shipped += 1
+                default:
+                    break;
+            }
+            return acc
+        }, { processed: 0, delivered: 0, shipped: 0 })
+
+        const productOrderByPrice = orders.sort((a, b) => (b.totalPrice - a.totalPrice))
+        const top5MostExpensiveOrders = productOrderByPrice.slice(0, 5)
+        const top5LeastExpensiveOrders = productOrderByPrice.slice(-5)
+
+        // console.log("productOrderByPrice", productOrderByPrice);
+        // console.log("top5MostExpensiveOrders", top5MostExpensiveOrders);
+        // console.log("top5LeastExpensiveOrders", top5LeastExpensiveOrders);
+        console.log("orders", orders);
+        // console.log("productSaleRecords", productSaleRecords);
 
         // convert object into array with sorting in descring order
 
         const saleRecordsArry = Object.entries(productSaleRecords).map(([name, value]) => ({ name, value })).sort(
-            (a,b)=> b.value.quantity -a.value.quantity
+            (a, b) => b.value.quantity - a.value.quantity
         )
-        console.log("saleRecordsArry", totalOdersWithLimitAndSkip.length);
-        console.log("saleRecordsArry", saleRecordsArry);
+        // console.log("saleRecordsArry", totalOdersWithLimitAndSkip.length);
+        // console.log("saleRecordsArry", saleRecordsArry);
         // Get top 5 most and least bought products
         const top5MostBought = saleRecordsArry.slice(0, 5);
         const top5LeastBought = saleRecordsArry.slice(-5);
 
-        console.log("Top 5 Most Bought Products:", top5MostBought);
-        console.log("Top 5 Least Bought Products:", top5LeastBought);
+        // console.log("Top 5 Most Bought Products:", top5MostBought);
+        // console.log("Top 5 Least Bought Products:", top5LeastBought);
         if (isAccessTokenExp) {
             accessToken = user.generateAccessToken()
         }
@@ -455,8 +485,11 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             res.status(200).json({
                 success: true,
                 message: 'orders list fetch successfully',
+                productOrderStatusCount,
+                top5MostExpensiveOrders,
+                top5LeastExpensiveOrders,
                 totalOrdersArr: totalOdersWithLimitAndSkip,
-                past30DaysOrders:recentOrders,
+                past30DaysOrders: recentOrders,
                 saleRecordsArry,
                 top5MostBought,
                 top5LeastBought,
