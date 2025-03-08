@@ -10,7 +10,12 @@ const updateOrderStatusSchema = z.object({
     orderStatus: z.string().trim().min(1, { message: "trackingId is required" })
 })
 
+const graphDataSchema = z.object({
+    year:z.number().min(2024)
+})
+
 export {
     placeOrderZodSchema,
-    updateOrderStatusSchema
+    updateOrderStatusSchema,
+    graphDataSchema
 }
