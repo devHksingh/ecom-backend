@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { placeOrderZodSchema, updateOrderStatusSchema } from './orderZodSchema';
+import { graphDataSchema, placeOrderZodSchema, updateOrderStatusSchema } from './orderZodSchema';
 import { z } from 'zod';
 import createHttpError from 'http-errors';
 import { AuthRequest } from '../middlewares/authMiddleware';
@@ -395,6 +395,7 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         const orders = await Order.find()
 
 
+
         // Handle access token expiration
         let accessToken
         const totalOrders = orders.length
@@ -427,7 +428,7 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             acc[productName].url = order.productDetail.imageUrl
 
             return acc
-        }, {} as Record<string, { quantity: number, price: number,  url: string }>)
+        }, {} as Record<string, { quantity: number, price: number, url: string }>)
 
         const productOrderStatusCount = orders.reduce((acc, order) => {
             switch (order.orderStatus) {
@@ -452,7 +453,7 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         // console.log("productOrderByPrice", productOrderByPrice);
         // console.log("top5MostExpensiveOrders", top5MostExpensiveOrders);
         // console.log("top5LeastExpensiveOrders", top5LeastExpensiveOrders);
-        console.log("orders", orders);
+        // console.log("orders", orders);
         // console.log("productSaleRecords", productSaleRecords);
 
         // convert object into array with sorting in descring order
@@ -504,6 +505,79 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
     }
 }
 
+const getgraphData = async (req: Request, res: Response, next: NextFunction) => {
+
+    try {
+        const _req = req as AuthRequest
+        const userId = _req._id
+        const isAccessTokenExp = _req.isAccessTokenExp
+        const isValidYear = graphDataSchema.parse(req.body)
+        const { year } = isValidYear
+        //    verify user
+        const user = await User.findById(userId)
+        if (!user) {
+            return next(createHttpError(401, "Invalid request. User not found"));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(400, 'You have to login First!'))
+        }
+
+        if (user.role !== "admin" && user.role !== "manager") {
+            return next(createHttpError(400, 'Unauthorerize request'))
+        }
+        console.log("year ", year);
+
+        const startYear = new Date(`${year}-01-01T00:00:00.000Z`)
+        const endYear = new Date(`${year + 1}-01-01T00:00:00.000Z`)
+
+        // const orederAtThisYear = await Order.find({ createdAt: { $gte: startYear, $lt: endYear } })
+        const orederAtThisYear = await Order.find({
+            createdAt: { $gte: startYear, $lt: endYear }
+        });
+
+        console.log("orederAtThisYear", orederAtThisYear);
+        const graphData = orederAtThisYear.reduce((acc, order) => {
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const orderDate = new Date(order.orderPlaceOn)
+            const orderPlacedMonth = orderDate.getMonth()
+            if (!acc[months[orderPlacedMonth]]) {
+                acc[months[orderPlacedMonth]] = {
+                    totalOrders: 0,
+                    totalSale: 0
+                }
+            }
+            acc[months[orderPlacedMonth]].totalOrders += order.quantity
+            acc[months[orderPlacedMonth]].totalSale += order.totalPrice
+            return acc
+
+        }, {} as Record<string, { totalOrders: number, totalSale: number }>)
+        // convert into array
+        // const graphDataArr = Object.entries(graphData).map(([name, value]) => ({ name, value }))
+        const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const graphDataArr = Object.entries(graphData).map(([key, data]) => {
+            return { month: key, ...data }
+        }).sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month))
+
+        let accessToken
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken()
+        }
+        if (orederAtThisYear) {
+            res.status(200).json({
+                success: true,
+                graphData,
+                graphDataArr,
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+                isAccessTokenExp
+            })
+            return
+        }
+
+    } catch (error) {
+        return next(createHttpError(500, "Error occured while getting graphdata list"));
+    }
+}
+
 // const  orderHistory get all order details filter by  userId => 
 //  get all order
 // const get single OrderDetails getOrderByUserEmail
@@ -515,6 +589,6 @@ export {
     getSingleOrder,
     getOrderByUserId,
     getOrderByUserEmail,
-
+    getgraphData,
     getAllOrderByLimitAndSkip
 }
