@@ -511,8 +511,10 @@ const getgraphData = async (req: Request, res: Response, next: NextFunction) => 
         const _req = req as AuthRequest
         const userId = _req._id
         const isAccessTokenExp = _req.isAccessTokenExp
-        const isValidYear = graphDataSchema.parse(req.body)
+        const {year:userYear} = req.body
+        const isValidYear = graphDataSchema.parse({year:Number(userYear)})
         const { year } = isValidYear
+        // const year = Number(userYear)
         //    verify user
         const user = await User.findById(userId)
         if (!user) {
@@ -574,6 +576,9 @@ const getgraphData = async (req: Request, res: Response, next: NextFunction) => 
         }
 
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return next(createHttpError(401, { message: { type: "Validation error", zodError: error.errors } }))
+        }
         return next(createHttpError(500, "Error occured while getting graphdata list"));
     }
 }
