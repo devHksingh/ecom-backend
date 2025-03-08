@@ -565,7 +565,7 @@ const getgraphData = async (req: Request, res: Response, next: NextFunction) => 
         if (orederAtThisYear) {
             res.status(200).json({
                 success: true,
-                graphData,
+                // graphData,
                 graphDataArr,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
                 isAccessTokenExp
