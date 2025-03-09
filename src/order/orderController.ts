@@ -395,7 +395,10 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         const orders = await Order.find()
 
 
-
+        const totalSaleAmount = orders.reduce((acc,order)=>{
+            acc +=order.totalPrice
+            return acc
+        },0)
         // Handle access token expiration
         let accessToken
         const totalOrders = orders.length
@@ -486,6 +489,7 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             res.status(200).json({
                 success: true,
                 message: 'orders list fetch successfully',
+                totalSaleAmount,
                 productOrderStatusCount,
                 top5MostExpensiveOrders,
                 top5LeastExpensiveOrders,
