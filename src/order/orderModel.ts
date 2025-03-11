@@ -50,11 +50,12 @@ const orderSchema = new mongoose.Schema<Orders>({
         productId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Product"
-        }
+        },
+        currency: String
     },
-    userDetails:{
-        userName:String,
-        userEmail:String
+    userDetails: {
+        userName: String,
+        userEmail: String
     }
 
 }, { timestamps: true })
