@@ -430,6 +430,10 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         // Handle access token expiration
         let accessToken
         const totalOrders = orders.length
+        const totalPages = Math.ceil(totalOrders / parsedLimit)
+        const currentPage = Math.floor(parsedSkip / parsedLimit) + 1
+        const nextPage = currentPage < totalPages ? currentPage + 1 : null
+        const prevPage = currentPage > 1 ? currentPage - 1 : null
         const thirtyDaysAgoDate = new Date()
         thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30)
         const recentOrders = await Order.find({ createdAt: { $gte: thirtyDaysAgoDate } })
@@ -481,7 +485,7 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             // acc[productName].orderStatus = order.orderStatus
             acc[productName].url = order.productDetail.imageUrl
             // console.log("acc[productName].price", acc[productName].price,order.totalPrice,order.totalPrice * currencyConvertMultiplier,currencyConvertMultiplier,order.productDetail.currency,order.productDetail);
-            
+
             return acc
         }, {} as Record<string, { quantity: number, price: number, url: string }>)
 
@@ -545,6 +549,10 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
                 productOrderStatusCount,
                 top5MostExpensiveOrders,
                 top5LeastExpensiveOrders,
+                totalPages,
+                currentPage,
+                nextPage,
+                prevPage,
                 totalOrdersArr: totalOdersWithLimitAndSkip,
                 past30DaysOrders: recentOrders,
                 saleRecordsArry,
