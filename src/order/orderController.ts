@@ -68,7 +68,8 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
                     name: product?.title,
                     price: productPrice,
                     imageUrl: product?.image,
-                    productId
+                    productId,
+                    currency: product?.currency
                 },
                 userDetails: {
                     userName: user.name,
@@ -103,7 +104,8 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
                     price: product?.price,
                     image: product?.image,
                     category: product?.category,
-                    discountPrice: product?.salePrice
+                    discountPrice: product?.salePrice,
+                    currency: product?.currency
                 },
                 quantity: order.quantity,
                 totalPrice: order.totalPrice
@@ -395,10 +397,36 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         const orders = await Order.find()
 
 
-        const totalSaleAmount = orders.reduce((acc,order)=>{
-            acc +=order.totalPrice
+        const totalSaleAmount = orders.reduce((acc, order) => {
+            const productCurrency = order.productDetail.currency
+            let currencyConvertMultiplier
+            // converting into dolar
+            switch (productCurrency) {
+                case "INR":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                case "USD":
+                    currencyConvertMultiplier = 1
+                    break;
+                case "EUR":
+                    currencyConvertMultiplier = 1.19
+                    break;
+                case "GBP":
+                    currencyConvertMultiplier = 1.29
+                    break;
+                case "RUB":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                default:
+                    currencyConvertMultiplier = 1
+                    break
+            }
+            acc += (order.totalPrice * currencyConvertMultiplier)
+
             return acc
-        },0)
+        }, 0)
+
+        const formattedTotalSaleAmount = Number(totalSaleAmount.toFixed(2))
         // Handle access token expiration
         let accessToken
         const totalOrders = orders.length
@@ -414,6 +442,29 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         const productSaleRecords = orders.reduce((acc, order) => {
             const productName = order.productDetail.name
             const productQuantity = order.quantity
+            const productCurrency = order.productDetail.currency
+            let currencyConvertMultiplier: number
+            // converting into dolar
+            switch (productCurrency) {
+                case "INR":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                case "USD":
+                    currencyConvertMultiplier = 1
+                    break;
+                case "EUR":
+                    currencyConvertMultiplier = 1.19
+                    break;
+                case "GBP":
+                    currencyConvertMultiplier = 1.29
+                    break;
+                case "RUB":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                default:
+                    currencyConvertMultiplier = 1
+                    break
+            }
             // const orderDate = order.createdAt
             if (!acc[productName]) {
                 acc[productName] = {
@@ -426,10 +477,11 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             }
             acc[productName].quantity += productQuantity
             // acc[productName].date = new Date(orderDate).toLocaleDateString()
-            acc[productName].price += order.totalPrice
+            acc[productName].price += Number((order.totalPrice * currencyConvertMultiplier).toFixed(2))
             // acc[productName].orderStatus = order.orderStatus
             acc[productName].url = order.productDetail.imageUrl
-
+            // console.log("acc[productName].price", acc[productName].price,order.totalPrice,order.totalPrice * currencyConvertMultiplier,currencyConvertMultiplier,order.productDetail.currency,order.productDetail);
+            
             return acc
         }, {} as Record<string, { quantity: number, price: number, url: string }>)
 
@@ -489,7 +541,7 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             res.status(200).json({
                 success: true,
                 message: 'orders list fetch successfully',
-                totalSaleAmount,
+                totalSaleAmount: formattedTotalSaleAmount,
                 productOrderStatusCount,
                 top5MostExpensiveOrders,
                 top5LeastExpensiveOrders,
@@ -515,8 +567,8 @@ const getgraphData = async (req: Request, res: Response, next: NextFunction) => 
         const _req = req as AuthRequest
         const userId = _req._id
         const isAccessTokenExp = _req.isAccessTokenExp
-        const {year:userYear} = req.body
-        const isValidYear = graphDataSchema.parse({year:Number(userYear)})
+        const { year: userYear } = req.body
+        const isValidYear = graphDataSchema.parse({ year: Number(userYear) })
         const { year } = isValidYear
         // const year = Number(userYear)
         //    verify user
@@ -544,6 +596,29 @@ const getgraphData = async (req: Request, res: Response, next: NextFunction) => 
         console.log("orederAtThisYear", orederAtThisYear);
         const graphData = orederAtThisYear.reduce((acc, order) => {
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            let currencyConvertMultiplier: number
+            const productCurrency = order.productDetail.currency
+            // converting into dolar
+            switch (productCurrency) {
+                case "INR":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                case "USD":
+                    currencyConvertMultiplier = 1
+                    break;
+                case "EUR":
+                    currencyConvertMultiplier = 1.19
+                    break;
+                case "GBP":
+                    currencyConvertMultiplier = 1.29
+                    break;
+                case "RUB":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                default:
+                    currencyConvertMultiplier = 1
+                    break
+            }
             const orderDate = new Date(order.orderPlaceOn)
             const orderPlacedMonth = orderDate.getMonth()
             if (!acc[months[orderPlacedMonth]]) {
@@ -553,7 +628,7 @@ const getgraphData = async (req: Request, res: Response, next: NextFunction) => 
                 }
             }
             acc[months[orderPlacedMonth]].totalOrders += order.quantity
-            acc[months[orderPlacedMonth]].totalSale += order.totalPrice
+            acc[months[orderPlacedMonth]].totalSale += Number((order.totalPrice * currencyConvertMultiplier).toFixed(2))
             return acc
 
         }, {} as Record<string, { totalOrders: number, totalSale: number }>)

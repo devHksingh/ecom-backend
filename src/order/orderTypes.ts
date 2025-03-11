@@ -9,7 +9,8 @@ export interface Orders {
     productDetail:{
         name:string,
         price:number,
-        imageUrl:string
+        imageUrl:string,
+        currency:string
     },
     userDetails:{},
     createdAt:string
