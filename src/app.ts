@@ -14,13 +14,33 @@ import cartRouter from './cart/cartRouter';
 
 
 const app = express()
+// const allowedOrigins: string[] = 
+//   typeof config.frontendDomain === 'string' 
+//     ? [config.frontendDomain] 
+//     : Array.isArray(config.frontendDomain) 
+//       ? config.frontendDomain 
+//       : []; 
+const allowedOrigins = [config.clientDomain, config.dashboardDomain];
 
-app.use(
-    cors({
-        origin: config.frontendDomain,
-        credentials: true
-    })
-)
+
+const corsOptions = {
+    origin: function (origin:any,callback:any) {
+        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+};
+
+app.use(cors(corsOptions));
+
+// app.use(
+//     cors({
+//         origin: config.frontendDomain,
+//         credentials: true
+//     })
+// )
 
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true }))
@@ -48,10 +68,10 @@ app.get('/', (req, res, next) => {
 })
 
 app.use('/api/v1/users', userRouter)
-app.use('/api/v1/products',productRouter)
-app.use('/api/v1/orders',orderRouter)
-app.use('/api/v1/wishList',wishListRouter)
-app.use('/api/v1/cart',cartRouter)
+app.use('/api/v1/products', productRouter)
+app.use('/api/v1/orders', orderRouter)
+app.use('/api/v1/wishList', wishListRouter)
+app.use('/api/v1/cart', cartRouter)
 
 // Global error handler
 app.use(globalErrorHandler);

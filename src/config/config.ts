@@ -11,6 +11,8 @@ const _config = {
     cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
     cloudinarySecret: process.env.CLOUDINARY_API_SECRET,
     frontendDomain: process.env.FRONTEND_DOMAIN,
+    clientDomain:process.env.CLIENT_DOMAIN,
+    dashboardDomain:process.env.DASHBOARD_DOMAIN,
     JWT_REFRESH_EXP:process.env.JWT_REFRESH_EXP,
     JWT_ACCESS_EXP:process.env.JWT_ACCESS_EXP,
     JWT_ISSUER:process.env.JWT_ISSUER,
