@@ -505,7 +505,7 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             return acc
         }, { processed: 0, delivered: 0, shipped: 0 })
 
-        const productOrderByPrice = orders.sort((a, b) => (b.totalPrice - a.totalPrice))
+        const productOrderByPrice = orders.sort((a, b) => (b.productDetail.price - a.productDetail.price))
         const top5MostExpensiveOrders = productOrderByPrice.slice(0, 5)
         const top5LeastExpensiveOrders = productOrderByPrice.slice(-5)
 
@@ -601,7 +601,7 @@ const getgraphData = async (req: Request, res: Response, next: NextFunction) => 
             createdAt: { $gte: startYear, $lt: endYear }
         });
 
-        console.log("orederAtThisYear", orederAtThisYear);
+        // console.log("orederAtThisYear", orederAtThisYear);
         const graphData = orederAtThisYear.reduce((acc, order) => {
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             let currencyConvertMultiplier: number
@@ -636,7 +636,10 @@ const getgraphData = async (req: Request, res: Response, next: NextFunction) => 
                 }
             }
             acc[months[orderPlacedMonth]].totalOrders += order.quantity
+            // acc[months[orderPlacedMonth]].totalSale += Number((order.totalPrice * currencyConvertMultiplier).toFixed(2))
             acc[months[orderPlacedMonth]].totalSale += Number((order.totalPrice * currencyConvertMultiplier).toFixed(2))
+            
+            
             return acc
 
         }, {} as Record<string, { totalOrders: number, totalSale: number }>)
@@ -656,6 +659,7 @@ const getgraphData = async (req: Request, res: Response, next: NextFunction) => 
                 success: true,
                 // graphData,
                 graphDataArr,
+                orederAtThisYear,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
                 isAccessTokenExp
             })
