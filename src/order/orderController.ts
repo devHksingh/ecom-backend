@@ -476,7 +476,9 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
                     // date: "",
                     price: 0,
                     // orderStatus: "",
-                    url: ""
+                    url: "",
+                    currency:"",
+                    totalPrice:0
                 }
             }
             acc[productName].quantity += productQuantity
@@ -484,10 +486,12 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             acc[productName].price += Number((order.totalPrice * currencyConvertMultiplier).toFixed(2))
             // acc[productName].orderStatus = order.orderStatus
             acc[productName].url = order.productDetail.imageUrl
+            acc[productName].currency = order.productDetail.currency
+            acc[productName].totalPrice = (acc[productName].quantity  * acc[productName].price)
             // console.log("acc[productName].price", acc[productName].price,order.totalPrice,order.totalPrice * currencyConvertMultiplier,currencyConvertMultiplier,order.productDetail.currency,order.productDetail);
 
             return acc
-        }, {} as Record<string, { quantity: number, price: number, url: string }>)
+        }, {} as Record<string, { quantity: number, price: number, url: string,currency:string,totalPrice:number }>)
 
         const productOrderStatusCount = orders.reduce((acc, order) => {
             switch (order.orderStatus) {
