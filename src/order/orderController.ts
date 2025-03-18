@@ -7,6 +7,7 @@ import { Product } from '../product/productModel';
 import { User } from '../user/userModel';
 import { v4 as uuidv4 } from 'uuid';
 import { Order } from './orderModel';
+import { log } from 'node:console';
 
 
 
@@ -509,7 +510,47 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             return acc
         }, { processed: 0, delivered: 0, shipped: 0 })
 
-        const productOrderByPrice = orders.sort((a, b) => (b.productDetail.price - a.productDetail.price))
+        const ordersWithUsdPrice = orders.map(order => {
+            const productCurrency = order.productDetail.currency;
+            let currencyConvertMultiplier;
+            
+            // converting into dollar
+            switch (productCurrency) {
+              case "INR":
+                currencyConvertMultiplier = 0.011;
+                break;
+              case "USD":
+                currencyConvertMultiplier = 1;
+                break;
+              case "EUR":
+                currencyConvertMultiplier = 1.19;
+                break;
+              case "GBP":
+                currencyConvertMultiplier = 1.29;
+                break;
+              case "RUB":
+                currencyConvertMultiplier = 0.011;
+                break;
+              default:
+                currencyConvertMultiplier = 1;
+                break;
+            }
+            
+        
+            return {
+              ...order,
+              productDetail: {
+                ...order.productDetail,
+                price: Number((order.productDetail.price * currencyConvertMultiplier).toFixed(2))
+              },
+              totalPrice: Number((order.productDetail.price * currencyConvertMultiplier).toFixed(2))
+            };
+          });
+
+        console.log("ordersWithUsdPrice",ordersWithUsdPrice);
+        
+
+        const productOrderByPrice = ordersWithUsdPrice.sort((a, b) => (b.productDetail.price - a.productDetail.price))
         const top5MostExpensiveOrders = productOrderByPrice.slice(0, 5)
         const top5LeastExpensiveOrders = productOrderByPrice.slice(-5)
 
@@ -564,7 +605,8 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
                 top5LeastBought,
                 totalOrders,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
-                isAccessTokenExp
+                isAccessTokenExp,
+                orders
             })
             return
         }
