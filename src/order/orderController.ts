@@ -438,8 +438,8 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30)
         const recentOrders = await Order.find({ createdAt: { $gte: thirtyDaysAgoDate } })
         // console.log("recentOrders raw",recentOrders);
-        const totalOdersWithLimitAndSkip = await Order.find().limit(parsedLimit).skip(parsedSkip)
-        totalOdersWithLimitAndSkip.sort((a, b) => (b.totalPrice - a.totalPrice))
+        const totalOdersWithLimitAndSkip = await Order.find().sort({'orderPlaceOn':-1}).limit(parsedLimit).skip(parsedSkip)
+        // totalOdersWithLimitAndSkip.sort((a, b) => (a.productDetail.name - b.productDetail.name))
         // cal top 5 most and least buy product
 
 
