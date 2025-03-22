@@ -192,6 +192,7 @@ const updateOrderStatus = async (req: Request, res: Response, next: NextFunction
             success: true,
             message: 'Order status updated successfully',
             orderDetails: order,
+            isAccessTokenExp,
             accessToken: isAccessTokenExp ? accessToken : undefined,
         })
     } catch (error) {
@@ -265,6 +266,31 @@ const getSingleOrder = async (req: Request, res: Response, next: NextFunction) =
                 message: "No orders found",
             });
             return;
+        }
+        res.status(200).json({
+            success: true,
+            message: 'orders list fetch successfully',
+            order
+        })
+        return
+    } catch (error) {
+        return next(createHttpError(500, "Error occured while single order "));
+    }
+}
+
+const getOrderByTrackingId = async(req: Request, res: Response, next: NextFunction)=>{
+    const trackingId = req.params.trackingId
+    if (!trackingId) {
+        return next(createHttpError(401, "trackingId is required"))
+    }
+    try {
+        const order = await Order.find({trackingId})
+        if (!order.length) {
+            res.status(404).json({
+                success: false,
+                message: "No orders found",
+            });
+            
         }
         res.status(200).json({
             success: true,
@@ -732,5 +758,6 @@ export {
     getOrderByUserId,
     getOrderByUserEmail,
     getgraphData,
-    getAllOrderByLimitAndSkip
+    getAllOrderByLimitAndSkip,
+    getOrderByTrackingId
 }
