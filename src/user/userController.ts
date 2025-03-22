@@ -225,7 +225,9 @@ const getSingleuser = async (req: Request, res: Response, next: NextFunction) =>
     const { isAccessTokenExp, isLogin, email, _id } = _req
 
     try {
-        const user = await User.findOne({ email }).select("-password")
+        
+        // TODO : REMOVE refreshToken  
+        const user = await User.findById(_id).select("-password -refreshToken")
         if (!user) {
             next(createHttpError(404, 'Unauthorize request .No user Found'))
         }
