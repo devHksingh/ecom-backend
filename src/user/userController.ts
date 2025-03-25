@@ -255,7 +255,7 @@ const createManager = async (req: Request, res: Response, next: NextFunction) =>
     const _req = req as AuthRequest
     const { _id, email, isLogin } = _req
     try {
-        const isvalidUser = await User.findById({ _id }).select("password")
+        const isvalidUser = await User.findById( _id ).select("-password -refreshToken")
         if (isvalidUser) {
             if (isvalidUser.role === "admin") {
                 if (!isvalidUser.isLogin) {
@@ -286,7 +286,7 @@ const createManager = async (req: Request, res: Response, next: NextFunction) =>
         }
     } catch (error) {
         if (error instanceof z.ZodError) {
-            const err = createHttpError(401, { message: { type: "Validation error", zodError: error.errors } })
+            const err = createHttpError(401, { message: { type: "Validation error1", zodError: error.errors } })
             next(err)
         } else {
             const err = createHttpError(500, "Internal server error while creating manager")
@@ -383,22 +383,25 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
                 }, { totalUser: 0, totalAdmin: 0, totalManager: 0 })
 
                 last30Days = alluser.reduce((acc, user) => {
-                    if (user.role = "user") {
+                    if (user.role === "user") {
                         const today = new Date()
                         const thirtyDaysAgoDate = new Date()
                         thirtyDaysAgoDate.setDate(today.getDate() - 30)
                         // console.log(new Date(user.createdAt))
-                        console.log("new Date(user.createdAt)", new Date(user.createdAt).toLocaleString());
+                        // console.log("new Date(user.createdAt)", new Date(user.createdAt).toLocaleString());
                         const date = new Date(user.createdAt)
                         if (date >= thirtyDaysAgoDate && date <= today) {
                             acc.usersAdded += 1
                         }
-                    } else if (user.role === "manager") {
+                    } 
+                    if (user.role === "manager") {
+                        console.log("user.role === manager",user.role);
+                        
                         const today = new Date()
                         const thirtyDaysAgoDate = new Date()
                         thirtyDaysAgoDate.setDate(today.getDate() - 30)
                         const date = new Date(user.createdAt)
-                        // console.log("new Date(user.createdAt)" ,new Date(user.createdAt).toLocaleString());
+                        console.log("new Date(user.createdAt) manager" ,new Date(user.createdAt).toLocaleString());
 
                         if (date >= thirtyDaysAgoDate && date <= today) {
                             acc.managerAdded += 1
