@@ -225,7 +225,7 @@ const getSingleuser = async (req: Request, res: Response, next: NextFunction) =>
     const { isAccessTokenExp, isLogin, email, _id } = _req
 
     try {
-        
+
         // TODO : REMOVE refreshToken  
         const user = await User.findById(_id).select("-password -refreshToken")
         if (!user) {
@@ -299,23 +299,37 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
     const _req = req as AuthRequest
     const { _id, email, isLogin } = _req
     try {
+        console.log("req.body", req.body);
+
         const validateUser = changeUserPasswordSchema.parse(req.body)
+        console.log("validateUser", validateUser);
         const { confirmPassword, password, oldPassword } = validateUser
-        const user = await User.findById({ _id })
+        console.log("confirmPassword, password, oldPassword", confirmPassword, password, oldPassword);
+
+        const user = await User.findById(_id).select("-refreshToken")
+        console.log("user", user);
         if (user) {
-            const isPasswordCorrect = user.isPasswordCorrect(oldPassword)
+            // log 
+            console.log("user", user);
+
+            const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
             if (!isPasswordCorrect) {
-                next(createHttpError(401, "Old password not correct"))
+                return next(createHttpError(401, "Old password not correct"));
             }
             user.password = confirmPassword
-            user.save({ validateBeforeSave: false })
+            await user.save({ validateBeforeSave: false })
             res.status(201).json({ success: true, message: "Password change successfully" })
         }
 
     } catch (error) {
-
+        if (error instanceof z.ZodError) {
+            return next(createHttpError(401, { message: { type: "Validation error", zodError: error.errors } }))
+        }
+        return next(createHttpError(500, 'Server error .unable to update  user password.'))
     }
 }
+
 
 const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -342,7 +356,7 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
             }
             // const alluser = await User.find({ role: "user" }).select("-password -cardNumber -isLogin -refreshToken")
             const alluser = await User.find().select("-password -cardNumber -isLogin -refreshToken")
-            const totalUsers = alluser.length 
+            const totalUsers = alluser.length
             const totalPages = Math.ceil(totalUsers / parsedLimit)
 
             const currentPage = Math.floor(parsedSkip / parsedLimit) + 1
@@ -374,7 +388,7 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
                         const thirtyDaysAgoDate = new Date()
                         thirtyDaysAgoDate.setDate(today.getDate() - 30)
                         // console.log(new Date(user.createdAt))
-                        console.log("new Date(user.createdAt)" ,new Date(user.createdAt).toLocaleString());
+                        console.log("new Date(user.createdAt)", new Date(user.createdAt).toLocaleString());
                         const date = new Date(user.createdAt)
                         if (date >= thirtyDaysAgoDate && date <= today) {
                             acc.usersAdded += 1
@@ -385,7 +399,7 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
                         thirtyDaysAgoDate.setDate(today.getDate() - 30)
                         const date = new Date(user.createdAt)
                         // console.log("new Date(user.createdAt)" ,new Date(user.createdAt).toLocaleString());
-                        
+
                         if (date >= thirtyDaysAgoDate && date <= today) {
                             acc.managerAdded += 1
                         }
