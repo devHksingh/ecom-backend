@@ -18,7 +18,7 @@ const loginUserSchema = z.object({
 const changeUserPasswordSchema = z.object({
     oldPassword: z.string().trim().min(6, { message: "Must be 6 or more characters long" }),
     password: z.string().trim().min(6, { message: "Must be 6 or more characters long" }),
-    confirmPassword: z.string().trim()
+    confirmPassword: z.string().trim().min(6, { message: "Must be 6 or more characters long" })
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"]
