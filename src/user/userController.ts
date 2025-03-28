@@ -71,14 +71,14 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
         if (user) {
             if (user.isLogin) {
                 const err = createHttpError(401, "User is already login")
-                next(err)
+                return next(err)
             }
 
             const isPasswordCorrect = await user.isPasswordCorrect(password)
             console.log(isPasswordCorrect)
             if (!isPasswordCorrect) {
                 const err = createHttpError(400, "Invalid  password");
-                next(err)
+                return next(err)
             }
             const accessToken = user.generateAccessToken()
             const refreshToken = user.generateRefreshToken()
