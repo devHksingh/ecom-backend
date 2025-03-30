@@ -24,9 +24,14 @@ const changeUserPasswordSchema = z.object({
     path: ["confirmPassword"]
 })
 
+const userAddressSchema = z.object({
+    address: z.string().trim().min(1, { message: "Address is requried" }).max(50),
+    pinCode: z.number().min(1, { message: "PinCode is required" }).max(6)
+})
 
 export {
     createUserSchema,
     loginUserSchema,
-    changeUserPasswordSchema
+    changeUserPasswordSchema,
+    userAddressSchema
 }
