@@ -9,6 +9,7 @@ export interface Users {
     phoneNumber?: string,
     cardNumber?: string,
     address?: string,
+    pinCode:number,
     purchasedIteams?: [],
     isPasswordCorrect(password: string): Promise<boolean>;
     generateAccessToken(): string;
