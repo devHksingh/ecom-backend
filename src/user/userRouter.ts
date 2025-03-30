@@ -1,5 +1,5 @@
 import express from 'express'
-import { changePassword, createAdmin, createManager, createUser, forcedLogout, getAlluser, getAlluserWithLimt, getSingleuser, loginUser, logoutUser } from './userController'
+import { changePassword, createAdmin, createManager, createUser, forcedLogout, getAlluser, getAlluserWithLimt, getSingleuser, loginUser, logoutUser, updateAddress } from './userController'
 import authenticate from '../middlewares/authMiddleware'
 
 
@@ -20,6 +20,7 @@ userRouter.get('/admin/getAlluser', authenticate, getAlluser)
 userRouter.get('/admin/getAlluserWithLimt', authenticate, getAlluserWithLimt)
 userRouter.get('/getuser', authenticate, getSingleuser)
 userRouter.post('/forcedLogout', forcedLogout)
+userRouter.post('/updateAddress', authenticate, updateAddress)
 
 
 export default userRouter
