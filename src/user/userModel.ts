@@ -50,10 +50,20 @@ const userSchema = new mongoose.Schema<Users>({
         default: false
     },
     address: {
-        type: String
+        type: String,
+        default:"BLDG 88,Khare Street,10, Aadil Society, AtulPur,Gujarat",
+        maxlength:50,
+        trim:true
+    },
+    pinCode:{
+        type:Number,
+        default:361365,
+        maxlength:6
     },
     cardNumber: {
-        type: String
+        type: Number,
+        default:4242424242424242,
+        maxlength:16
     }
 }, { timestamps: true })
 
