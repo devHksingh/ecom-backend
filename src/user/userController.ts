@@ -1,10 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { changeUserPasswordSchema, createUserSchema, loginUserSchema } from "./userZodSchema";
+import { changeUserPasswordSchema, createUserSchema, loginUserSchema, userAddressSchema } from "./userZodSchema";
 import { User } from "./userModel";
 import createHttpError from "http-errors";
 import { userAccessToken, userRefreshToken } from "../utils/genrateJwtToken";
 import { z } from 'zod'
-import { log } from "console";
 import { AuthRequest } from "../middlewares/authMiddleware";
 
 
@@ -229,7 +228,7 @@ const getSingleuser = async (req: Request, res: Response, next: NextFunction) =>
         // TODO : REMOVE refreshToken  
         const user = await User.findById(_id).select("-password -refreshToken")
         if (!user) {
-            next(createHttpError(404, 'Unauthorize request .No user Found'))
+            return next(createHttpError(404, 'Unauthorize request .No user Found'))
         }
         if (user) {
             if (!user.isLogin) {
@@ -255,18 +254,18 @@ const createManager = async (req: Request, res: Response, next: NextFunction) =>
     const _req = req as AuthRequest
     const { _id, email, isLogin } = _req
     try {
-        const isvalidUser = await User.findById( _id ).select("-password -refreshToken")
+        const isvalidUser = await User.findById(_id).select("-password -refreshToken")
         if (isvalidUser) {
             if (isvalidUser.role === "admin") {
                 if (!isvalidUser.isLogin) {
-                    next(createHttpError(401, "You are logout. Login it again!."))
+                    return next(createHttpError(401, "You are logout. Login it again!."))
                 }
                 const validateUser = createUserSchema.parse(req.body)
                 const { email, password, name } = validateUser
                 // check if already register in db
                 const isUserRegister = await User.findOne({ email })
                 if (isUserRegister) {
-                    next(createHttpError(401, "Manager is already register in DB."))
+                    return next(createHttpError(401, "Manager is already register in DB."))
                 }
                 // creating user in db
                 const user = await User.create({
@@ -307,10 +306,14 @@ const changePassword = async (req: Request, res: Response, next: NextFunction) =
         console.log("confirmPassword, password, oldPassword", confirmPassword, password, oldPassword);
 
         const user = await User.findById(_id).select("-refreshToken")
-        console.log("user", user);
+        // console.log("user", user);
+        if (!user) {
+            return next(createHttpError(404, 'Unauthorize request .No user Found'))
+        }
         if (user) {
-            // log 
-            console.log("user", user);
+            if (!user.isLogin) {
+                return next(createHttpError(401, "You are logout. Login it again!."))
+            }
 
             const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
@@ -393,15 +396,15 @@ const getAlluserWithLimt = async (req: Request, res: Response, next: NextFunctio
                         if (date >= thirtyDaysAgoDate && date <= today) {
                             acc.usersAdded += 1
                         }
-                    } 
+                    }
                     if (user.role === "manager") {
-                        console.log("user.role === manager",user.role);
-                        
+                        console.log("user.role === manager", user.role);
+
                         const today = new Date()
                         const thirtyDaysAgoDate = new Date()
                         thirtyDaysAgoDate.setDate(today.getDate() - 30)
                         const date = new Date(user.createdAt)
-                        console.log("new Date(user.createdAt) manager" ,new Date(user.createdAt).toLocaleString());
+                        console.log("new Date(user.createdAt) manager", new Date(user.createdAt).toLocaleString());
 
                         if (date >= thirtyDaysAgoDate && date <= today) {
                             acc.managerAdded += 1
@@ -466,6 +469,41 @@ const forcedLogout = async (req: Request, res: Response, next: NextFunction) => 
     }
 }
 
+const updateAddress = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const _req = req as AuthRequest
+        const { _id, isAccessTokenExp } = _req
+        // zod validation
+        const isValidUserDetails = userAddressSchema.parse(req.body)
+        const { address, pinCode } = isValidUserDetails
+        const user = await User.findById(_id).select("-password -refreshToken")
+        if (!user) {
+            return next(createHttpError(404, 'Unauthorize request .No user Found'))
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(401, "You are logout. Login it again!."))
+        }
+        user.address = address
+        await user.save({ validateModifiedOnly: true })
+        user.pinCode = pinCode
+        await user.save({ validateModifiedOnly: true })
+        let newAccessToken = ""
+        if (isAccessTokenExp) {
+            newAccessToken = user.generateAccessToken()
+        }
+        res.status(200).json({
+            success: true,
+            message: "Add user address successfully",
+            user,
+            isAccessTokenExp,
+            accessToken: newAccessToken
+        })
+
+    } catch (error) {
+        return next(createHttpError(500, 'Server error .unable to add user address.'))
+    }
+}
+
 export {
     createUser,
     loginUser,
@@ -476,5 +514,6 @@ export {
     changePassword,
     getSingleuser,
     getAlluserWithLimt,
-    forcedLogout
+    forcedLogout,
+    updateAddress
 }
