@@ -34,6 +34,7 @@ const userSchema = new mongoose.Schema<Users>({
     phoneNumber: {
         type: String,
         trim: true,
+        default:"8888888888",
         maxlength: 10
     },
     // purchasedIteams: [
@@ -56,12 +57,12 @@ const userSchema = new mongoose.Schema<Users>({
         trim:true
     },
     pinCode:{
-        type:Number,
-        default:361365,
+        type:String,
+        default:"361365",
         maxlength:6
     },
     cardNumber: {
-        type: Number,
+        type: String,
         default:4242424242424242,
         maxlength:16
     }
