@@ -26,12 +26,17 @@ const changeUserPasswordSchema = z.object({
 
 const userAddressSchema = z.object({
     address: z.string().trim().min(1, { message: "Address is requried" }).max(50),
-    pinCode: z.number().min(1, { message: "PinCode is required" }).max(6)
+    pinCode: z.string().min(1, { message: "PinCode is required" }).max(6)
+})
+const userPhoneNumberSchema = z.object({
+    phoneNumber: z.string().trim().min(1, { message: "Address is requried" }).max(10,{message:"phoneNumber must be 10 digit"}),
+    
 })
 
 export {
     createUserSchema,
     loginUserSchema,
     changeUserPasswordSchema,
-    userAddressSchema
+    userAddressSchema,
+    userPhoneNumberSchema
 }
