@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { changeUserPasswordSchema, createUserSchema, loginUserSchema, userAddressSchema } from "./userZodSchema";
+import { changeUserPasswordSchema, createUserSchema, loginUserSchema, userAddressSchema, userPhoneNumberSchema } from "./userZodSchema";
 import { User } from "./userModel";
 import createHttpError from "http-errors";
 import { userAccessToken, userRefreshToken } from "../utils/genrateJwtToken";
@@ -21,7 +21,7 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
             // res.status(401).json({ message: "User is already exist with this email id" })
             const err = createHttpError(401, "User is already exist with this email id")
             // console.log("ERROR :",err)
-            next(err)
+            return next(err)
         }
         // genrate token
         // const refreshToken = await userRefreshToken({ email: email })
@@ -44,9 +44,6 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
         if (newUser) {
 
             res.status(201).json({ success: true, message: "user is register" })
-
-
-
         }
     } catch (error) {
         if (error instanceof z.ZodError) {
@@ -96,7 +93,9 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
                         id: user.id,
                         name: user.name,
                         email: user.email,
-
+                        // address:user.address,
+                        // pinCode:user.pinCode,
+                        // phoneNumber:user.phoneNumber
                     }
 
                 })
@@ -242,7 +241,7 @@ const getSingleuser = async (req: Request, res: Response, next: NextFunction) =>
                 success: true,
                 user,
                 isAccessTokenExp,
-                accessToken: newAccessToken
+                accessToken: newAccessToken,
             })
         }
     } catch (error) {
@@ -504,6 +503,39 @@ const updateAddress = async (req: Request, res: Response, next: NextFunction) =>
     }
 }
 
+const updatePhoneNumber = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const _req = req as AuthRequest
+        const { _id, isAccessTokenExp } = _req
+        // zod validation
+        const isValidUserDetails = userPhoneNumberSchema.parse(req.body)
+        const { phoneNumber } = isValidUserDetails
+        const user = await User.findById(_id).select("-password -refreshToken")
+        if (!user) {
+            return next(createHttpError(404, 'Unauthorize request .No user Found'))
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(401, "You are logout. Login it again!."))
+        }
+        user.phoneNumber = phoneNumber
+        await user.save({ validateModifiedOnly: true })
+        
+        let newAccessToken = ""
+        if (isAccessTokenExp) {
+            newAccessToken = user.generateAccessToken()
+        }
+        res.status(200).json({
+            success: true,
+            message: "Added user phoneNumber successfully",
+            user,
+            isAccessTokenExp,
+            accessToken: newAccessToken
+        })
+
+    } catch (error) {
+        return next(createHttpError(500, 'Server error .unable to add user phoneNumber.'))
+    }
+}
 export {
     createUser,
     loginUser,
@@ -515,5 +547,6 @@ export {
     getSingleuser,
     getAlluserWithLimt,
     forcedLogout,
-    updateAddress
+    updateAddress,
+    updatePhoneNumber
 }
