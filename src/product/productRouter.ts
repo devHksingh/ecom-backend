@@ -2,7 +2,7 @@ import express from 'express'
 import multer from 'multer'
 import path from 'node:path'
 import authenticate from '../middlewares/authMiddleware'
-import { createProduct, deleteProductById, getAllCategoryName, getAllProducts, getAllProductsWithLimits, getProductByCategory, getProductByCategoryWithLimit, getSingleProduct, product, updateProduct } from './productController'
+import { createProduct, customizeProduct, deleteProductById, getAllCategoryName, getAllProducts, getAllProductsWithLimits, getProductByCategory, getProductByCategoryWithLimit, getSingleProduct, product, updateProduct } from './productController'
 
 
 const productRouter = express.Router()
@@ -24,6 +24,7 @@ productRouter.post('/getProductByCategoryWithLimit', getProductByCategoryWithLim
 productRouter.get('/getAllCategoryName', getAllCategoryName)
 productRouter.get('/getProductByCategory', getProductByCategory)
 productRouter.get('/product', product)
+productRouter.get('/customizeProduct',authenticate ,customizeProduct)
 productRouter.get('/:productId', getSingleProduct)
 productRouter.delete('/:productId', authenticate, deleteProductById)
 
