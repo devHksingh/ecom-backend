@@ -316,7 +316,7 @@ const getOrderByUserId = async (req: Request, res: Response, next: NextFunction)
         if (!user.isLogin) {
             return next(createHttpError(400, 'You have to login First!'))
         }
-        const order = await Order.find({ user: userId })
+        const order = await Order.find({ "userDetails.userEmail":user.email })
         let accessToken
         if (isAccessTokenExp) {
             accessToken = user.generateAccessToken()
