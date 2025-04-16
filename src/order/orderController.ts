@@ -278,19 +278,19 @@ const getSingleOrder = async (req: Request, res: Response, next: NextFunction) =
     }
 }
 
-const getOrderByTrackingId = async(req: Request, res: Response, next: NextFunction)=>{
+const getOrderByTrackingId = async (req: Request, res: Response, next: NextFunction) => {
     const trackingId = req.params.trackingId
     if (!trackingId) {
         return next(createHttpError(401, "trackingId is required"))
     }
     try {
-        const order = await Order.find({trackingId})
+        const order = await Order.find({ trackingId })
         if (!order.length) {
             res.status(404).json({
                 success: false,
                 message: "No orders found",
             });
-            
+
         }
         res.status(200).json({
             success: true,
@@ -465,7 +465,7 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30)
         const recentOrders = await Order.find({ createdAt: { $gte: thirtyDaysAgoDate } })
         // console.log("recentOrders raw",recentOrders);
-        const totalOdersWithLimitAndSkip = await Order.find().sort({'orderPlaceOn':-1}).limit(parsedLimit).skip(parsedSkip)
+        const totalOdersWithLimitAndSkip = await Order.find().sort({ 'orderPlaceOn': -1 }).limit(parsedLimit).skip(parsedSkip)
         // totalOdersWithLimitAndSkip.sort((a, b) => (a.productDetail.name - b.productDetail.name))
         // cal top 5 most and least buy product
 
@@ -504,8 +504,8 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
                     price: 0,
                     // orderStatus: "",
                     url: "",
-                    currency:"",
-                    totalPrice:0
+                    currency: "",
+                    totalPrice: 0
                 }
             }
             acc[productName].quantity += productQuantity
@@ -514,11 +514,11 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
             // acc[productName].orderStatus = order.orderStatus
             acc[productName].url = order.productDetail.imageUrl
             acc[productName].currency = order.productDetail.currency
-            acc[productName].totalPrice = (acc[productName].quantity  * acc[productName].price)
+            acc[productName].totalPrice = (acc[productName].quantity * acc[productName].price)
             // console.log("acc[productName].price", acc[productName].price,order.totalPrice,order.totalPrice * currencyConvertMultiplier,currencyConvertMultiplier,order.productDetail.currency,order.productDetail);
 
             return acc
-        }, {} as Record<string, { quantity: number, price: number, url: string,currency:string,totalPrice:number }>)
+        }, {} as Record<string, { quantity: number, price: number, url: string, currency: string, totalPrice: number }>)
 
         const productOrderStatusCount = orders.reduce((acc, order) => {
             switch (order.orderStatus) {
@@ -539,52 +539,46 @@ const getAllOrderByLimitAndSkip = async (req: Request, res: Response, next: Next
         const ordersWithUsdPrice = orders.map(order => {
             const productCurrency = order.productDetail.currency;
             let currencyConvertMultiplier;
-            
+
             // converting into dollar
             switch (productCurrency) {
-              case "INR":
-                currencyConvertMultiplier = 0.011;
-                break;
-              case "USD":
-                currencyConvertMultiplier = 1;
-                break;
-              case "EUR":
-                currencyConvertMultiplier = 1.19;
-                break;
-              case "GBP":
-                currencyConvertMultiplier = 1.29;
-                break;
-              case "RUB":
-                currencyConvertMultiplier = 0.011;
-                break;
-              default:
-                currencyConvertMultiplier = 1;
-                break;
+                case "INR":
+                    currencyConvertMultiplier = 0.011;
+                    break;
+                case "USD":
+                    currencyConvertMultiplier = 1;
+                    break;
+                case "EUR":
+                    currencyConvertMultiplier = 1.19;
+                    break;
+                case "GBP":
+                    currencyConvertMultiplier = 1.29;
+                    break;
+                case "RUB":
+                    currencyConvertMultiplier = 0.011;
+                    break;
+                default:
+                    currencyConvertMultiplier = 1;
+                    break;
             }
-            
-        
-            return {
-              ...order,
-              productDetail: {
-                ...order.productDetail,
-                price: Number((order.productDetail.price * currencyConvertMultiplier).toFixed(2))
-              },
-              totalPrice: Number((order.productDetail.price * currencyConvertMultiplier).toFixed(2))
-            };
-          });
 
-        console.log("ordersWithUsdPrice",ordersWithUsdPrice);
-        
+
+            return {
+                ...order,
+                productDetail: {
+                    ...order.productDetail,
+                    price: Number((order.productDetail.price * currencyConvertMultiplier).toFixed(2))
+                },
+                totalPrice: Number((order.productDetail.price * currencyConvertMultiplier).toFixed(2))
+            };
+        });
+
+        console.log("ordersWithUsdPrice", ordersWithUsdPrice);
+
 
         const productOrderByPrice = ordersWithUsdPrice.sort((a, b) => (b.productDetail.price - a.productDetail.price))
         const top5MostExpensiveOrders = productOrderByPrice.slice(0, 5)
         const top5LeastExpensiveOrders = productOrderByPrice.slice(-5)
-
-        // console.log("productOrderByPrice", productOrderByPrice);
-        // console.log("top5MostExpensiveOrders", top5MostExpensiveOrders);
-        // console.log("top5LeastExpensiveOrders", top5LeastExpensiveOrders);
-        // console.log("orders", orders);
-        // console.log("productSaleRecords", productSaleRecords);
 
         // convert object into array with sorting in descring order
 
@@ -710,8 +704,8 @@ const getgraphData = async (req: Request, res: Response, next: NextFunction) => 
             acc[months[orderPlacedMonth]].totalOrders += order.quantity
             // acc[months[orderPlacedMonth]].totalSale += Number((order.totalPrice * currencyConvertMultiplier).toFixed(2))
             acc[months[orderPlacedMonth]].totalSale += Number((order.totalPrice * currencyConvertMultiplier).toFixed(2))
-            
-            
+
+
             return acc
 
         }, {} as Record<string, { totalOrders: number, totalSale: number }>)

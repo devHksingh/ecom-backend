@@ -5,9 +5,9 @@ import { addToCart, getCart, removeFromCart, updateCartQuantity } from "./cartCo
 const cartRouter = express.Router()
 
 
-cartRouter.post('/addCartProduct',authenticate,addToCart)
-cartRouter.post('/updateCartProduct',authenticate,updateCartQuantity)
-cartRouter.delete('/removeFromCart/:productId',authenticate,removeFromCart)
-cartRouter.get('/getCart',authenticate,getCart)
+cartRouter.post('/addCartProduct', authenticate, addToCart)
+cartRouter.post('/updateCartProduct', authenticate, updateCartQuantity)
+cartRouter.delete('/removeFromCart/:productId', authenticate, removeFromCart)
+cartRouter.get('/getCart', authenticate, getCart)
 
 export default cartRouter

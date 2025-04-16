@@ -11,26 +11,18 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const validateUser = createUserSchema.parse(req.body)
         const { email, name, password } = validateUser
-        console.log(email, name, password);
+        console.log("email, name, password", email, name, password);
 
         // check user is already exist in db
         const checkUser = await User.findOne({
             email
-        }).select("-password")
+        }).select("-password -refreshToken")
         if (checkUser) {
             // res.status(401).json({ message: "User is already exist with this email id" })
             const err = createHttpError(401, "User is already exist with this email id")
-            // console.log("ERROR :",err)
+
             return next(err)
         }
-        // genrate token
-        // const refreshToken = await userRefreshToken({ email: email })
-        // console.log(refreshToken);
-
-        // const token = `Bearer ${refreshToken}`
-        // const accessToken = userAccessToken({ email })
-        // console.log("inside controller access",accessToken);
-
 
         // register new user on db
         const newUser = await User.create({
@@ -42,6 +34,7 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
 
         })
         if (newUser) {
+            console.log("newUser", newUser);
 
             res.status(201).json({ success: true, message: "user is register" })
         }
@@ -51,6 +44,7 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
             next(err)
         } else {
             const err = createHttpError(500, "Internal server error while creating user")
+
             next(err)
         }
     }
@@ -519,7 +513,7 @@ const updatePhoneNumber = async (req: Request, res: Response, next: NextFunction
         }
         user.phoneNumber = phoneNumber
         await user.save({ validateModifiedOnly: true })
-        
+
         let newAccessToken = ""
         if (isAccessTokenExp) {
             newAccessToken = user.generateAccessToken()

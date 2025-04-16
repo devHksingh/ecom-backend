@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema<Users>({
     phoneNumber: {
         type: String,
         trim: true,
-        default:"8888888888",
+        default: "8888888888",
         maxlength: 10
     },
     // purchasedIteams: [
@@ -52,19 +52,19 @@ const userSchema = new mongoose.Schema<Users>({
     },
     address: {
         type: String,
-        default:"BLDG 88,Khare Street,10, Aadil Society, AtulPur,Gujarat",
-        maxlength:50,
-        trim:true
+        default: "BLDG 88,Khare Street,10, Aadil Society, AtulPur,Gujarat",
+        maxlength: 200,
+        trim: true
     },
-    pinCode:{
-        type:String,
-        default:"361365",
-        maxlength:6
+    pinCode: {
+        type: String,
+        default: "361365",
+        maxlength: 6
     },
     cardNumber: {
         type: String,
-        default:4242424242424242,
-        maxlength:16
+        default: 4242424242424242,
+        maxlength: 16
     }
 }, { timestamps: true })
 
@@ -99,7 +99,7 @@ userSchema.methods.generateRefreshToken = function () {
     return `Bearer ${token}`
 }
 
-userSchema.methods.isPasswordCorrect = async function(password:string){
+userSchema.methods.isPasswordCorrect = async function (password: string) {
     const result = await bcrypt.compare(password, this.password)
     return result
 }
