@@ -6,12 +6,13 @@ export interface Orders {
     orderPlaceOn: Date,
     totalPrice: number,
     quantity: number,
-    productDetail:{
-        name:string,
-        price:number,
-        imageUrl:string,
-        currency:string
+    productDetail: {
+        productId: string,
+        name: string,
+        price: number,
+        imageUrl: string,
+        currency: string
     },
-    userDetails:{},
-    createdAt:string
+    userDetails: {},
+    createdAt: string
 }
