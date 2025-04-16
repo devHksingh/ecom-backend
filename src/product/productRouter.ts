@@ -2,7 +2,7 @@ import express from 'express'
 import multer from 'multer'
 import path from 'node:path'
 import authenticate from '../middlewares/authMiddleware'
-import { createProduct, deleteProductById, getAllCategoryName, getAllProducts, getAllProductsWithLimits, getProductByCategory, getProductByCategoryWithLimit, getSingleProduct, updateProduct } from './productController'
+import { createProduct, deleteProductById, getAllCategoryName, getAllProducts, getAllProductsWithLimits, getProductByCategory, getProductByCategoryWithLimit, getSingleProduct, product, updateProduct } from './productController'
 
 
 const productRouter = express.Router()
@@ -18,12 +18,13 @@ const upload = multer({
 
 productRouter.post('/register', authenticate, upload.fields([{ name: "productImage", maxCount: 1 }]), createProduct)
 productRouter.patch('/update/:productId', authenticate, upload.fields([{ name: "productImage", maxCount: 1 }]), updateProduct)
-productRouter.get('/allProduct',  getAllProducts)
-productRouter.get('/getAllProductsWithLimits',  getAllProductsWithLimits)
-productRouter.post('/getProductByCategoryWithLimit',  getProductByCategoryWithLimit)
-productRouter.get('/getAllCategoryName',  getAllCategoryName)
-productRouter.get('/getProductByCategory',  getProductByCategory)
-productRouter.get('/:productId',  getSingleProduct)
+productRouter.get('/allProduct', getAllProducts)
+productRouter.get('/getAllProductsWithLimits', getAllProductsWithLimits)
+productRouter.post('/getProductByCategoryWithLimit', getProductByCategoryWithLimit)
+productRouter.get('/getAllCategoryName', getAllCategoryName)
+productRouter.get('/getProductByCategory', getProductByCategory)
+productRouter.get('/product', product)
+productRouter.get('/:productId', getSingleProduct)
 productRouter.delete('/:productId', authenticate, deleteProductById)
 
 
