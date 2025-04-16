@@ -8,6 +8,7 @@ import { Product } from './productModel'
 import { z } from 'zod'
 import { createProductSchema } from './productZodSchema'
 import fs from 'node:fs'
+import { Order } from '../order/orderModel'
 
 
 
@@ -384,9 +385,9 @@ const deleteProductById = async (req: Request, res: Response, next: NextFunction
         // console.log("All products :",products)
         // console.log("All products :",products.length)
         // TODO: Uncomment below line in production
-        // if (products.length < 40) {
-        //     return next(createHttpError(400, 'Not enough product to dispaly'))
-        // }
+        if (products.length < 40) {
+            return next(createHttpError(400, 'Not enough product to dispaly'))
+        }
 
 
         //  Verify product
@@ -590,6 +591,97 @@ const getAllCategoryName = async (req: Request, res: Response, next: NextFunctio
     }
 }
 
+const product = async (req: Request, res: Response, next: NextFunction) => {
+
+    try {
+        const order = await Order.find()
+        const productSaleRecord = order.reduce((acc, order) => {
+            const productName = order.productDetail.name
+            const productQuantity = order.quantity
+            const productCurrency = order.productDetail.currency
+            const id = order.productDetail.productId
+            let currencyConvertMultiplier: number
+            // converting into dolar
+            switch (productCurrency) {
+                case "INR":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                case "USD":
+                    currencyConvertMultiplier = 1
+                    break;
+                case "EUR":
+                    currencyConvertMultiplier = 1.19
+                    break;
+                case "GBP":
+                    currencyConvertMultiplier = 1.29
+                    break;
+                case "RUB":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                default:
+                    currencyConvertMultiplier = 1
+                    break
+            }
+            if (!acc[productName]) {
+                acc[productName] = {
+                    quantity: 0,
+                    productId: "",
+                    currency: "",
+                    totalPrice: 0
+                }
+            }
+            acc[productName].quantity += productQuantity
+            acc[productName].productId = id
+            acc[productName].totalPrice += Number(((order.totalPrice) * currencyConvertMultiplier).toFixed(2))
+            acc[productName].currency = productCurrency
+            return acc
+
+        }, {} as Record<string, { productId: string, quantity: number, totalPrice: number, currency: string }>)
+
+        // convert object into array with sorting in descring order
+        const productArrByQuantity = Object.entries(productSaleRecord).map(([name, value]) => ({ name, value })).sort((a, b) => b.value.quantity - a.value.quantity)
+        const productOrderByPrice = productArrByQuantity.sort((a, b) => b.value.totalPrice - a.value.totalPrice)
+        const top8MostBought = productArrByQuantity.slice(0, 8)
+        const top8MostExpensive = productOrderByPrice.slice(0, 8)
+        const top8LeastExpensive = productOrderByPrice.slice(-8)
+        // get  productId[] from above 
+        const top8MostBoughtProductId: string[] = []
+        const top8MostExpensiveProductId: string[] = []
+        const top8LeastExpensiveProductId: string[] = []
+        top8MostBought.map((product) => {
+            const id = product.value.productId
+            top8MostBoughtProductId.push(id)
+        })
+        top8MostExpensive.map((product) => {
+            const id = product.value.productId
+            top8MostExpensiveProductId.push(id)
+        })
+        top8LeastExpensive.map((product) => {
+            const id = product.value.productId
+            top8LeastExpensiveProductId.push(id)
+        })
+        const top8MostBoughtProduct = await Product.find({ _id: { $in: top8MostBoughtProductId } })
+        const top8MostExpensiveProduct = await Product.find({ _id: { $in: top8MostExpensiveProductId } })
+        const top8LeastExpensiveProduct = await Product.find({ _id: { $in: top8LeastExpensiveProductId } })
+        if (order && top8MostBoughtProduct) {
+            res.status(200).json({
+                success: true,
+                message: "Product details fetched",
+                top8MostBoughtProduct,
+                top8MostExpensiveProduct,
+                top8LeastExpensiveProduct
+            })
+        } else {
+            res.status(400).json({
+                success: false,
+                message: "No product to show"
+            })
+        }
+    } catch (error) {
+        next(createHttpError(500, "Unable to retrieve Product details"));
+    }
+}
+
 export {
     createProduct,
     getAllProducts,
@@ -599,5 +691,6 @@ export {
     deleteProductById,
     getProductByCategoryWithLimit,
     getAllProductsWithLimits,
-    getAllCategoryName
+    getAllCategoryName,
+    product
 }
