@@ -682,6 +682,91 @@ const product = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
+const customizeProduct = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const _req = req as AuthRequest
+        const { _id, email, isLogin, isAccessTokenExp } = _req
+        //    verify user
+        const user = await User.findById({ _id })
+        if (!user) {
+            return next(createHttpError(401, "Invalid request. User not found"));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(400, 'You have to login First!'))
+        }
+        const order = await Order.find({ "userDetails.userEmail": user.email })
+        const boughtProductId: string[] = []
+        if (order.length > 0) {
+            order.map((product) => {
+                const id = product.productDetail.productId
+                boughtProductId.push(id)
+            })
+        }
+        let product: { "_id": string, category: string[] }[] = []
+        if (boughtProductId.length > 0) {
+            product = await Product.find({ _id: { $in: boughtProductId } }).select("category")
+        }
+        const productCategory: string[] = []
+        if (product.length > 0) {
+            product.map((iteam) => {
+                iteam.category.map((cate) => {
+                    if (!productCategory.includes(cate)) {
+                        productCategory.push(cate)
+                    }
+                })
+            })
+        }
+        const productSearchCategory: string[] = []
+        if (productCategory.length > 0) {
+            if (productCategory.includes("Electronics")) {
+                productSearchCategory.push("Electronics")
+            }
+            if (productCategory.includes("Grocery")) {
+                productSearchCategory.push("Grocery")
+            }
+            if (productCategory.includes("Clothing")) {
+                productSearchCategory.push("Clothing")
+            }
+            if (productCategory.includes("Headphone")) {
+                productSearchCategory.push("Headphone")
+            }
+            if (productCategory.includes("Furniture")) {
+                productSearchCategory.push("Furniture")
+            }
+            if (productCategory.includes("Footwear")) {
+                productSearchCategory.push("Footwear")
+            }
+            if (productCategory.includes("Watch")) {
+                productSearchCategory.push("Watch")
+            }
+        }
+        let customizeProduct
+        if (productSearchCategory.length > 0) {
+            customizeProduct = await Product.find({ category: { $in: productSearchCategory } })
+        }
+        let firstTwelveProduct
+        if (customizeProduct) {
+            firstTwelveProduct = customizeProduct.slice(0, 12)
+        }
+        let accessToken
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken()
+        }
+        if (order && firstTwelveProduct) {
+            res.status(200).json({
+                // product,success: true,
+                message: "Product details fetched",
+                firstTwelveProduct,
+                // customizeProduct,
+                isAccessTokenExp,
+                accessToken: isAccessTokenExp ? accessToken : undefined,
+            })
+        }
+    } catch (error) {
+        next(createHttpError(500, "Unable to retrieve Product details"));
+    }
+}
+
 export {
     createProduct,
     getAllProducts,
@@ -692,5 +777,6 @@ export {
     getProductByCategoryWithLimit,
     getAllProductsWithLimits,
     getAllCategoryName,
-    product
+    product,
+    customizeProduct
 }
