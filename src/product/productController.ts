@@ -640,36 +640,95 @@ const product = async (req: Request, res: Response, next: NextFunction) => {
 
         // convert object into array with sorting in descring order
         const productArrByQuantity = Object.entries(productSaleRecord).map(([name, value]) => ({ name, value })).sort((a, b) => b.value.quantity - a.value.quantity)
-        const productOrderByPrice = productArrByQuantity.sort((a, b) => b.value.totalPrice - a.value.totalPrice)
+        // const productOrderByPrice = productArrByQuantity.sort((a, b) => b.value.totalPrice - a.value.totalPrice)
         const top8MostBought = productArrByQuantity.slice(0, 8)
-        const top8MostExpensive = productOrderByPrice.slice(0, 8)
-        const top8LeastExpensive = productOrderByPrice.slice(-8)
+        // const top8MostExpensive = productOrderByPrice.slice(0, 8)
+        // const top8LeastExpensive = productOrderByPrice.slice(-8)
         // get  productId[] from above 
         const top8MostBoughtProductId: string[] = []
-        const top8MostExpensiveProductId: string[] = []
-        const top8LeastExpensiveProductId: string[] = []
+        // const top8MostExpensiveProductId: string[] = []
+        // const top8LeastExpensiveProductId: string[] = []
         top8MostBought.map((product) => {
             const id = product.value.productId
             top8MostBoughtProductId.push(id)
         })
-        top8MostExpensive.map((product) => {
-            const id = product.value.productId
-            top8MostExpensiveProductId.push(id)
-        })
-        top8LeastExpensive.map((product) => {
-            const id = product.value.productId
-            top8LeastExpensiveProductId.push(id)
-        })
+        // top8MostExpensive.map((product) => {
+        //     const id = product.value.productId
+        //     top8MostExpensiveProductId.push(id)
+        // })
+        // top8LeastExpensive.map((product) => {
+        //     const id = product.value.productId
+        //     top8LeastExpensiveProductId.push(id)
+        // })
         const top8MostBoughtProduct = await Product.find({ _id: { $in: top8MostBoughtProductId } })
-        const top8MostExpensiveProduct = await Product.find({ _id: { $in: top8MostExpensiveProductId } })
-        const top8LeastExpensiveProduct = await Product.find({ _id: { $in: top8LeastExpensiveProductId } })
-        if (order && top8MostBoughtProduct) {
+        // const top8MostExpensiveProduct = await Product.find({ _id: { $in: top8MostExpensiveProductId } })
+        // const top8LeastExpensiveProduct = await Product.find({ _id: { $in: top8LeastExpensiveProductId } })
+        const products = await Product.find()
+        const expensiveProductId: string[] = []
+        const leastExpensiveProductId: string[] = []
+        if (products) {
+            const productRecord = products.reduce((acc, prod) => {
+                const productName = prod.title
+                const productPrice = prod.price - prod.salePrice
+                const productCurrency = prod.currency
+                const id = prod.id
+                let currencyConvertMultiplier: number
+
+                switch (productCurrency) {
+                    case "INR":
+                        currencyConvertMultiplier = 0.011
+                        break;
+                    case "USD":
+                        currencyConvertMultiplier = 1
+                        break;
+                    case "EUR":
+                        currencyConvertMultiplier = 1.19
+                        break;
+                    case "GBP":
+                        currencyConvertMultiplier = 1.29
+                        break;
+                    case "RUB":
+                        currencyConvertMultiplier = 0.011
+                        break;
+                    default:
+                        currencyConvertMultiplier = 1
+                        break
+                }
+                if (!acc[productName]) {
+                    acc[productName] = {
+
+                        productId: "",
+                        currency: "",
+                        totalPrice: 0
+                    }
+                }
+
+                acc[productName].productId = id
+                acc[productName].totalPrice = Number((currencyConvertMultiplier * productPrice).toFixed(2))
+                acc[productName].currency = productCurrency
+                return acc
+            }, {} as Record<string, { productId: string, totalPrice: number, currency: string }>)
+            // conver into array
+            const productByPrice = Object.entries(productRecord).map(([name, value]) => ({ name, value })).sort((a, b) => b.value.totalPrice - a.value.totalPrice)
+            productByPrice.slice(0, 8).map((product) => {
+                expensiveProductId.push(product.value.productId)
+            })
+            productByPrice.slice(-8).map((product) => {
+                leastExpensiveProductId.push(product.value.productId)
+            })
+        }
+        const expensiveProducts = await Product.find({ _id: { $in: expensiveProductId } })
+        const leastExpensiveProducts = await Product.find({ _id: { $in: leastExpensiveProductId } })
+        if (order && top8MostBoughtProduct && leastExpensiveProductId && expensiveProductId) {
             res.status(200).json({
                 success: true,
                 message: "Product details fetched",
+                // leastExpensiveProductId,
+                // expensiveProductId,
+                // products,
                 top8MostBoughtProduct,
-                top8MostExpensiveProduct,
-                top8LeastExpensiveProduct
+                top8MostExpensiveProduct:expensiveProducts,
+                top8LeastExpensiveProduct:leastExpensiveProducts
             })
         } else {
             res.status(400).json({
