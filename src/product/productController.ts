@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { createProductSchema } from './productZodSchema'
 import fs from 'node:fs'
 import { Order } from '../order/orderModel'
+import { Products } from './productTypes'
 
 
 
@@ -727,8 +728,8 @@ const product = async (req: Request, res: Response, next: NextFunction) => {
                 // expensiveProductId,
                 // products,
                 top8MostBoughtProduct,
-                top8MostExpensiveProduct:expensiveProducts,
-                top8LeastExpensiveProduct:leastExpensiveProducts
+                top8MostExpensiveProduct: expensiveProducts,
+                top8LeastExpensiveProduct: leastExpensiveProducts
             })
         } else {
             res.status(400).json({
@@ -803,18 +804,35 @@ const customizeProduct = async (req: Request, res: Response, next: NextFunction)
         if (productSearchCategory.length > 0) {
             customizeProduct = await Product.find({ category: { $in: productSearchCategory } })
         }
+        // boughtProductId
         let firstTwelveProduct
-        if (customizeProduct) {
-            firstTwelveProduct = customizeProduct.slice(0, 12)
+        // let filterCustomizeProduct:Products[] = []
+        // if (customizeProduct) {
+        //     if(boughtProductId.length >0){
+        //         customizeProduct.map((product)=>{
+        //             if(!boughtProductId.includes(product.id)){
+        //                 filterCustomizeProduct.push(product)
+        //             }
+        //         })
+        //     }
+        //     // firstTwelveProduct = customizeProduct.slice(0, 12)
+        //     firstTwelveProduct = filterCustomizeProduct.slice(0, 12)
+        // }
+        const randomProduct = await Product.find({ _id: { $nin: boughtProductId } })
+        if (randomProduct) {
+            firstTwelveProduct = randomProduct.slice(0, 12)
         }
+        // console.log("boughtProductId",boughtProductId)
         let accessToken
         if (isAccessTokenExp) {
             accessToken = user.generateAccessToken()
         }
         if (order && firstTwelveProduct) {
             res.status(200).json({
-                // product,success: true,
+                // filterCustomizeProduct,
+                success: true,
                 message: "Product details fetched",
+
                 firstTwelveProduct,
                 // customizeProduct,
                 isAccessTokenExp,
