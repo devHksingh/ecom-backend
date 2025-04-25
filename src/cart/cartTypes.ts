@@ -12,3 +12,8 @@ export interface CartType {
     totalItems:number;
 
 }
+
+export interface MultilpeProduct{
+    id:string,
+    quantity: number
+}
