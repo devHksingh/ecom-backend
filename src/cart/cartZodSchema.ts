@@ -20,4 +20,13 @@ const cartUpdatequantity = z.object({
     type: z.enum(action)
 });
 
+// const multipleProductsSchema = z.array({
+//     products: z.array(
+//       z.object({
+//         id: z.string(),
+//         quantity: z.number().int().positive()
+//       })
+//     )
+//   });
+
 export { cartZodSchema, cartUpdatequantity };
