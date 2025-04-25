@@ -7,6 +7,7 @@ import { cartUpdatequantity, cartZodSchema } from './cartZodSchema';
 import { z } from 'zod';
 import { User } from '../user/userModel';
 import mongoose from 'mongoose';
+import { MultilpeProduct } from './cartTypes';
 
 // Add product to cart
 const addToCart = async (req: Request, res: Response, next: NextFunction) => {
@@ -52,7 +53,8 @@ const addToCart = async (req: Request, res: Response, next: NextFunction) => {
 
         if (existingItemIndex > -1) {
             // Update existing item quantity
-            cart.items[existingItemIndex].quantity += quantity;
+            // cart.items[existingItemIndex].quantity += quantity;
+            cart.items[existingItemIndex].quantity = quantity;
         } else {
             // Add new item to cart
             cart.items.push({
@@ -70,9 +72,9 @@ const addToCart = async (req: Request, res: Response, next: NextFunction) => {
 
         await cart.save();
         // update stock quantity
-        product.totalStock -= quantity
+        // product.totalStock -= quantity
 
-        await product.save()
+        // await product.save()
 
         res.status(200).json({
             success: true,
@@ -273,7 +275,7 @@ const removeFromCart = async (req: Request, res: Response, next: NextFunction) =
 // Get cart details
 const getCart = async (req: Request, res: Response, next: NextFunction) => {
     const _req = req as AuthRequest;
-    
+
 
     try {
         const { _id: userId, isAccessTokenExp } = _req
@@ -306,11 +308,289 @@ const getCart = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 
+// const multipleProductAddToCart = async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//         // Validate request body
+//         const { products } = multipleProductsSchema.parse(req.body)
+//         console.log("products", products)
+//         const _req = req as AuthRequest;
+//         const { _id: userId, isAccessTokenExp } = _req;
+//         let accessToken = "";
+//         // Validate user
+//         const user = await User.findById(userId);
+//         if (!user) {
+//             return next(createHttpError(404, 'User not found'));
+//         }
+//         if (!user.isLogin) {
+//             return next(createHttpError(401, 'Unauthorized. You have to login first.'));
+//         }
+//         if (isAccessTokenExp) {
+//             accessToken = user.generateAccessToken();
+//         }
+
+//         // Find or create cart for user
+//         // TODO: check
+//         let cart = await Cart.findOne({ user: userId });
+//         if (!cart) {
+//             cart = await Cart.create({
+//                 user: userId,
+//                 items: [],
+//                 totalAmount: 0,
+//                 totalItems: 0
+//             });
+//         }
+//         // Process each product
+//         const productsToUpdate = [];
+//         const invalidProducts = [];
+//         // Validate all products 
+//         for (const item of products) {
+//             const { id, quantity } = item
+
+//             const product = await Product.findById(id)
+//             // TODO :ONLY FOR TESTING
+//             if (product) {
+//                 console.log("single product ", product);
+//             }
+//             if (!product) {
+//                 invalidProducts.push({ id, reason: 'Product not found' });
+//                 continue;
+//             }
+//             if (product.totalStock < quantity) {
+//                 invalidProducts.push({
+//                     id,
+//                     name: product.title,
+//                     reason: 'Not enough stock available',
+//                     requestedQuantity: quantity,
+//                     availableStock: product.totalStock
+//                 })
+//                 continue
+//             }
+//             productsToUpdate.push({ product, quantity });
+//             // If there are invalid products, return error
+//             if (invalidProducts.length === products.length) {
+//                 return res.status(400).json({
+//                     success: false,
+//                     message: ' products could not be added to cart',
+//                     invalidProducts,
+//                     accessToken: isAccessTokenExp ? accessToken : undefined
+//                 });
+//             }
+//             // TODO
+//             // Process valid products
+//             for (const { product, quantity } of productsToUpdate) {
+//                 const productId = product._id.toString();
+
+//                 // Check if product already exists in cart
+//                 const existingItemIndex = cart.items.findIndex(
+//                     item => item.product.toString() === productId
+//                 );
+
+//                 if (existingItemIndex > -1) {
+//                     // Update existing item quantity (replace with new quantity as per your implementation)
+//                     cart.items[existingItemIndex].quantity = quantity;
+//                 } else {
+//                     // Add new item to cart
+//                     cart.items.push({
+//                         product: new mongoose.Types.ObjectId(productId),
+//                         quantity
+//                     });
+//                 }
+
+//                 // Update product stock
+//                 product.totalStock -= quantity;
+//                 await product.save();
+//             }
+
+//             // Recalculate cart totals - matches your existing patterns
+//             cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0);
+
+//             // Get all products for accurate price calculation
+//             const productIds = cart.items.map(item => item.product);
+//             const productDetails = await Product.find({ _id: { $in: productIds } });
+
+//             // Calculate total amount based on your pricing logic (price - salePrice)
+//             cart.totalAmount = cart.items.reduce((total, item) => {
+//                 const productDetail = productDetails.find(p => p._id.toString() === item.product.toString());
+//                 if (productDetail) {
+//                     const itemPrice = productDetail.price - productDetail.salePrice;
+//                     return total + (itemPrice * item.quantity);
+//                 }
+//                 return total;
+//             }, 0);
+
+//             await cart.save();
+
+//             // Fetch populated cart for response
+//             const populatedCart = await Cart.findById(cart._id).populate('items.product');
+
+//             return res.status(200).json({
+//                 success: true,
+//                 message: 'Products added to cart successfully',
+//                 cart: populatedCart,
+//                 accessToken: isAccessTokenExp ? accessToken : undefined
+//             });
+//         }
+//     } catch (error) {
+//         if (error instanceof z.ZodError) {
+//             return next(createHttpError(400, {
+//                 message: {
+//                     type: "Validation error",
+//                     zodError: error.errors
+//                 }
+//             }));
+//         }
+//         return next(createHttpError(500, "Error while adding multiple products to cart"));
+//     }
+// };
+
+
+const multipleProductAddToCart = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        // Validate request body
+        // const { products } = multipleProductsSchema.parse(req.body);
+        const products =(req.body);
+        const _req = req as AuthRequest;
+        const { _id: userId, isAccessTokenExp } = _req;
+        let accessToken = "";
+        
+        // Validate user
+        const user = await User.findById(userId);
+        if (!user) {
+            next(createHttpError(404, 'User not found'));
+            return;
+        }
+        if (!user.isLogin) {
+            next(createHttpError(401, 'Unauthorized. You have to login first.'));
+            return;
+        }
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken();
+        }
+
+        // Find or create cart for user
+        let cart = await Cart.findOne({ user: userId });
+        if (!cart) {
+            cart = await Cart.create({
+                user: userId,
+                items: [],
+                totalAmount: 0,
+                totalItems: 0
+            });
+        }
+        
+        // Process each product
+        const productsToUpdate: { product: any, quantity: number }[] = [];
+        const invalidProducts: any[] = [];
+        
+        // Validate all products first
+        for (const item of products) {
+            const { id, quantity } = item;
+            const product = await Product.findById(id);
+            
+            if (!product) {
+                invalidProducts.push({ id, reason: 'Product not found' });
+                continue;
+            }
+            
+            if (product.totalStock < quantity) {
+                invalidProducts.push({
+                    id,
+                    name: product.title,
+                    reason: 'Not enough stock available',
+                    requestedQuantity: quantity,
+                    availableStock: product.totalStock
+                });
+                continue;
+            }
+            
+            productsToUpdate.push({ product, quantity });
+        }
+        
+        // If there are invalid products, return error
+        if (invalidProducts.length === products.length) {
+            res.status(400).json({
+                success: false,
+                message: 'Products could not be added to cart',
+                invalidProducts,
+                accessToken: isAccessTokenExp ? accessToken : undefined
+            });
+            return;
+        }
+        
+        // Process valid products
+        for (const { product, quantity } of productsToUpdate) {
+            const productId = product._id.toString();
+
+            // Check if product already exists in cart
+            const existingItemIndex = cart.items.findIndex(
+                item => item.product.toString() === productId
+            );
+
+            if (existingItemIndex > -1) {
+                // Update existing item quantity
+                cart.items[existingItemIndex].quantity = quantity;
+            } else {
+                // Add new item to cart
+                cart.items.push({
+                    product: new mongoose.Types.ObjectId(productId),
+                    quantity
+                });
+            }
+
+            // Update product stock
+            product.totalStock -= quantity;
+            await product.save();
+        }
+
+        // Recalculate cart totals
+        cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0);
+
+        // Get all products for accurate price calculation
+        const productIds = cart.items.map(item => item.product);
+        const productDetails = await Product.find({ _id: { $in: productIds } });
+
+        // Calculate total amount
+        cart.totalAmount = cart.items.reduce((total, item) => {
+            const productDetail = productDetails.find(p => p._id.toString() === item.product.toString());
+            if (productDetail) {
+                const itemPrice = productDetail.price - productDetail.salePrice;
+                return total + (itemPrice * item.quantity);
+            }
+            return total;
+        }, 0);
+
+        await cart.save();
+
+        // Fetch populated cart for response
+        const populatedCart = await Cart.findById(cart._id).populate('items.product');
+
+        res.status(200).json({
+            success: true,
+            message: 'Products added to cart successfully',
+            cart: populatedCart,
+            accessToken: isAccessTokenExp ? accessToken : undefined
+        });
+        
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            next(createHttpError(400, {
+                message: {
+                    type: "Validation error",
+                    zodError: error.errors
+                }
+            }));
+            return;
+        }
+        next(createHttpError(500, "Error while adding multiple products to cart"));
+    }
+};
+
 
 
 export {
     addToCart,
     updateCartQuantity,
     removeFromCart,
-    getCart
+    getCart,
+    multipleProductAddToCart
 };
