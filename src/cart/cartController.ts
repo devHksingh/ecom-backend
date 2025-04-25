@@ -448,11 +448,16 @@ const multipleProductAddToCart = async (req: Request, res: Response, next: NextF
     try {
         // Validate request body
         // const { products } = multipleProductsSchema.parse(req.body);
-        const products =(req.body);
+        const products = (req.body);
+        const isValidRequest = Array.isArray(products)
+        if (!isValidRequest) {
+            next(createHttpError(400, "Not valid request"))
+            return
+        }
         const _req = req as AuthRequest;
         const { _id: userId, isAccessTokenExp } = _req;
         let accessToken = "";
-        
+
         // Validate user
         const user = await User.findById(userId);
         if (!user) {
@@ -477,21 +482,21 @@ const multipleProductAddToCart = async (req: Request, res: Response, next: NextF
                 totalItems: 0
             });
         }
-        
+
         // Process each product
         const productsToUpdate: { product: any, quantity: number }[] = [];
         const invalidProducts: any[] = [];
-        
+
         // Validate all products first
         for (const item of products) {
             const { id, quantity } = item;
             const product = await Product.findById(id);
-            
+
             if (!product) {
                 invalidProducts.push({ id, reason: 'Product not found' });
                 continue;
             }
-            
+
             if (product.totalStock < quantity) {
                 invalidProducts.push({
                     id,
@@ -502,10 +507,10 @@ const multipleProductAddToCart = async (req: Request, res: Response, next: NextF
                 });
                 continue;
             }
-            
+
             productsToUpdate.push({ product, quantity });
         }
-        
+
         // If there are invalid products, return error
         if (invalidProducts.length === products.length) {
             res.status(400).json({
@@ -516,7 +521,7 @@ const multipleProductAddToCart = async (req: Request, res: Response, next: NextF
             });
             return;
         }
-        
+
         // Process valid products
         for (const { product, quantity } of productsToUpdate) {
             const productId = product._id.toString();
@@ -537,9 +542,7 @@ const multipleProductAddToCart = async (req: Request, res: Response, next: NextF
                 });
             }
 
-            // Update product stock
-            product.totalStock -= quantity;
-            await product.save();
+
         }
 
         // Recalculate cart totals
@@ -553,7 +556,30 @@ const multipleProductAddToCart = async (req: Request, res: Response, next: NextF
         cart.totalAmount = cart.items.reduce((total, item) => {
             const productDetail = productDetails.find(p => p._id.toString() === item.product.toString());
             if (productDetail) {
-                const itemPrice = productDetail.price - productDetail.salePrice;
+                const productCurrency = productDetail.currency
+                let currencyConvertMultiplier
+                // converting into dolar
+                switch (productCurrency) {
+                    case "INR":
+                        currencyConvertMultiplier = 0.011
+                        break;
+                    case "USD":
+                        currencyConvertMultiplier = 1
+                        break;
+                    case "EUR":
+                        currencyConvertMultiplier = 1.19
+                        break;
+                    case "GBP":
+                        currencyConvertMultiplier = 1.29
+                        break;
+                    case "RUB":
+                        currencyConvertMultiplier = 0.011
+                        break;
+                    default:
+                        currencyConvertMultiplier = 1
+                        break
+                }
+                const itemPrice = Number(((productDetail.price - productDetail.salePrice) * currencyConvertMultiplier).toFixed(2));
                 return total + (itemPrice * item.quantity);
             }
             return total;
@@ -570,7 +596,7 @@ const multipleProductAddToCart = async (req: Request, res: Response, next: NextF
             cart: populatedCart,
             accessToken: isAccessTokenExp ? accessToken : undefined
         });
-        
+
     } catch (error) {
         if (error instanceof z.ZodError) {
             next(createHttpError(400, {
@@ -585,12 +611,165 @@ const multipleProductAddToCart = async (req: Request, res: Response, next: NextF
     }
 };
 
+// const multipleProductAddToCart2 = async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//         // Validate request body
+//         // const { products } = multipleProductsSchema.parse(req.body);
+//         const products = (req.body);
+//         const _req = req as AuthRequest;
+//         const { _id: userId, isAccessTokenExp } = _req;
+//         let accessToken = "";
 
+//         // Validate user
+//         const user = await User.findById(userId);
+//         if (!user) {
+//             return next(createHttpError(404, 'User not found'));
+
+//         }
+//         if (!user.isLogin) {
+//             return next(createHttpError(401, 'Unauthorized. You have to login first.'));
+
+//         }
+//         if (isAccessTokenExp) {
+//             accessToken = user.generateAccessToken();
+//         }
+
+//         // Find or create cart for user
+//         let cart = await Cart.findOne({ user: userId });
+//         if (!cart) {
+//             cart = await Cart.create({
+//                 user: userId,
+//                 items: [],
+//                 totalAmount: 0,
+//                 totalItems: 0
+//             });
+//         }
+
+//         // Process each product
+//         const productsToUpdate: { product: any, quantity: number }[] = [];
+//         const invalidProducts: any[] = [];
+
+//         // Validate all products first
+//         for (const item of products) {
+//             const { id, quantity } = item;
+//             const product = await Product.findById(id);
+
+//             if (!product) {
+//                 invalidProducts.push({ id, reason: 'Product not found' });
+//                 continue;
+//             }
+
+//             if (product.totalStock < quantity) {
+//                 invalidProducts.push({
+//                     id,
+//                     name: product.title,
+//                     reason: 'Not enough stock available',
+//                     requestedQuantity: quantity,
+//                     availableStock: product.totalStock
+//                 });
+//                 continue;
+//             }
+
+//             productsToUpdate.push({ product, quantity });
+//         }
+
+//         // If there are invalid products, return error
+//         if (invalidProducts.length === products.length) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Products could not be added to cart',
+//                 invalidProducts,
+//                 accessToken: isAccessTokenExp ? accessToken : undefined
+//             });
+
+//         }
+
+//         // Process valid products
+//         for (const { product, quantity } of productsToUpdate) {
+//             const productId = product._id.toString();
+
+//             // Check if product already exists in cart
+//             const existingItemIndex = cart.items.findIndex(
+//                 item => item.product.toString() === productId
+//             );
+
+//             if (existingItemIndex > -1) {
+//                 // Update existing item quantity
+//                 cart.items[existingItemIndex].quantity = quantity;
+//             } else {
+//                 // Add new item to cart
+//                 cart.items.push({
+//                     product: new mongoose.Types.ObjectId(productId),
+//                     quantity
+//                 });
+//             }
+
+
+//         }
+
+//         // Recalculate cart totals
+//         cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0);
+
+//         // Get all products for accurate price calculation
+//         const productIds = cart.items.map(item => item.product);
+//         const productDetails = await Product.find({ _id: { $in: productIds } });
+
+//         // Calculate total amount
+//         cart.totalAmount = cart.items.reduce((total, item) => {
+//             const productDetail = productDetails.find(p => p._id.toString() === item.product.toString());
+//             if (productDetail) {
+//                 const productCurrency = productDetail.currency
+//                 let currencyConvertMultiplier
+//                 // converting into dolar
+//                 switch (productCurrency) {
+//                     case "INR":
+//                         currencyConvertMultiplier = 0.011
+//                         break;
+//                     case "USD":
+//                         currencyConvertMultiplier = 1
+//                         break;
+//                     case "EUR":
+//                         currencyConvertMultiplier = 1.19
+//                         break;
+//                     case "GBP":
+//                         currencyConvertMultiplier = 1.29
+//                         break;
+//                     case "RUB":
+//                         currencyConvertMultiplier = 0.011
+//                         break;
+//                     default:
+//                         currencyConvertMultiplier = 1
+//                         break
+//                 }
+//                 const itemPrice = Number(((productDetail.price - productDetail.salePrice) * currencyConvertMultiplier).toFixed(2));
+//                 return total + (itemPrice * item.quantity);
+//             }
+//             return total;
+//         }, 0);
+
+//         await cart.save();
+
+//         // Fetch populated cart for response
+//         const populatedCart = await Cart.findById(cart._id).populate('items.product');
+
+//         return res.status(200).json({
+//             success: true,
+//             message: 'Products added to cart successfully',
+//             cart: populatedCart,
+//             accessToken: isAccessTokenExp ? accessToken : undefined
+//         });
+
+//     } catch {
+//         return next(createHttpError(500, "Error while adding multiple products to cart"));
+//     }
+
+// }
 
 export {
     addToCart,
     updateCartQuantity,
     removeFromCart,
     getCart,
-    multipleProductAddToCart
+    multipleProductAddToCart,
+    // multipleProductAddToCart2
 };
