@@ -517,6 +517,7 @@ const multipleProductAddToCart = async (req: Request, res: Response, next: NextF
                 success: false,
                 message: 'Products could not be added to cart',
                 invalidProducts,
+                isAccessTokenExp,
                 accessToken: isAccessTokenExp ? accessToken : undefined
             });
             return;
@@ -594,6 +595,7 @@ const multipleProductAddToCart = async (req: Request, res: Response, next: NextF
             success: true,
             message: 'Products added to cart successfully',
             cart: populatedCart,
+            isAccessTokenExp,
             accessToken: isAccessTokenExp ? accessToken : undefined
         });
 
