@@ -65,9 +65,38 @@ const addToCart = async (req: Request, res: Response, next: NextFunction) => {
 
         // Update cart totals
         cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0);
+        // cart.totalAmount = cart.items.reduce((total, item) => {
+        //     const itemPrice = product.price - product.salePrice;
+        //     return total + (itemPrice * item.quantity);
+        // }, 0);
         cart.totalAmount = cart.items.reduce((total, item) => {
-            const itemPrice = product.price - product.salePrice;
+            // const itemPrice = product.price - product.salePrice;
+            const productCurrency = product.currency
+            let currencyConvertMultiplier
+            // converting into dolar
+            switch (productCurrency) {
+                case "INR":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                case "USD":
+                    currencyConvertMultiplier = 1
+                    break;
+                case "EUR":
+                    currencyConvertMultiplier = 1.19
+                    break;
+                case "GBP":
+                    currencyConvertMultiplier = 1.29
+                    break;
+                case "RUB":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                default:
+                    currencyConvertMultiplier = 1
+                    break
+            }
+            const itemPrice = Number(((product.price - product.salePrice) * currencyConvertMultiplier).toFixed(2));
             return total + (itemPrice * item.quantity);
+            // return total + (itemPrice * item.quantity);
         }, 0);
 
         await cart.save();
@@ -142,10 +171,39 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
             cart.items[itemIndex].quantity += quantity
             // recalculate totals
             cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0)
+            // cart.totalAmount = cart.items.reduce((total, item) => {
+            //     const itemPrice = product.price - product.salePrice
+            //     return total + (itemPrice * item.quantity)
+            // }, 0)
             cart.totalAmount = cart.items.reduce((total, item) => {
-                const itemPrice = product.price - product.salePrice
-                return total + (itemPrice * item.quantity)
-            }, 0)
+                // const itemPrice = product.price - product.salePrice;
+                const productCurrency = product.currency
+                let currencyConvertMultiplier
+                // converting into dolar
+                switch (productCurrency) {
+                    case "INR":
+                        currencyConvertMultiplier = 0.011
+                        break;
+                    case "USD":
+                        currencyConvertMultiplier = 1
+                        break;
+                    case "EUR":
+                        currencyConvertMultiplier = 1.19
+                        break;
+                    case "GBP":
+                        currencyConvertMultiplier = 1.29
+                        break;
+                    case "RUB":
+                        currencyConvertMultiplier = 0.011
+                        break;
+                    default:
+                        currencyConvertMultiplier = 1
+                        break
+                }
+                const itemPrice = Number(((product.price - product.salePrice) * currencyConvertMultiplier).toFixed(2));
+                return total + (itemPrice * item.quantity);
+                // return total + (itemPrice * item.quantity);
+            }, 0);
             await cart.save()
             // update stock quantity
             product.totalStock -= quantity
@@ -166,10 +224,39 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
                 cart.items.splice(itemIndex, 1);
                 await cart.save()
                 cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0)
+                // cart.totalAmount = cart.items.reduce((total, item) => {
+                //     const itemPrice = product.price - product.salePrice
+                //     return total + (itemPrice * item.quantity)
+                // }, 0)
                 cart.totalAmount = cart.items.reduce((total, item) => {
-                    const itemPrice = product.price - product.salePrice
-                    return total + (itemPrice * item.quantity)
-                }, 0)
+                    // const itemPrice = product.price - product.salePrice;
+                    const productCurrency = product.currency
+                    let currencyConvertMultiplier
+                    // converting into dolar
+                    switch (productCurrency) {
+                        case "INR":
+                            currencyConvertMultiplier = 0.011
+                            break;
+                        case "USD":
+                            currencyConvertMultiplier = 1
+                            break;
+                        case "EUR":
+                            currencyConvertMultiplier = 1.19
+                            break;
+                        case "GBP":
+                            currencyConvertMultiplier = 1.29
+                            break;
+                        case "RUB":
+                            currencyConvertMultiplier = 0.011
+                            break;
+                        default:
+                            currencyConvertMultiplier = 1
+                            break
+                    }
+                    const itemPrice = Number(((product.price - product.salePrice) * currencyConvertMultiplier).toFixed(2));
+                    return total + (itemPrice * item.quantity);
+                    // return total + (itemPrice * item.quantity);
+                }, 0);
                 await cart.save()
                 product.totalStock += quantity
                 await product.save()
@@ -183,10 +270,39 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
             await cart.save()
             // recalculate totals
             cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0)
+            // cart.totalAmount = cart.items.reduce((total, item) => {
+            //     const itemPrice = product.price - product.salePrice
+            //     return total + (itemPrice * item.quantity)
+            // }, 0)
             cart.totalAmount = cart.items.reduce((total, item) => {
-                const itemPrice = product.price - product.salePrice
-                return total + (itemPrice * item.quantity)
-            }, 0)
+                // const itemPrice = product.price - product.salePrice;
+                const productCurrency = product.currency
+                let currencyConvertMultiplier
+                // converting into dolar
+                switch (productCurrency) {
+                    case "INR":
+                        currencyConvertMultiplier = 0.011
+                        break;
+                    case "USD":
+                        currencyConvertMultiplier = 1
+                        break;
+                    case "EUR":
+                        currencyConvertMultiplier = 1.19
+                        break;
+                    case "GBP":
+                        currencyConvertMultiplier = 1.29
+                        break;
+                    case "RUB":
+                        currencyConvertMultiplier = 0.011
+                        break;
+                    default:
+                        currencyConvertMultiplier = 1
+                        break
+                }
+                const itemPrice = Number(((product.price - product.salePrice) * currencyConvertMultiplier).toFixed(2));
+                return total + (itemPrice * item.quantity);
+                // return total + (itemPrice * item.quantity);
+            }, 0);
             await cart.save()
             product.totalStock += quantity
             await product.save()
@@ -208,7 +324,7 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
 }
 // Remove product from cart
 const removeFromCart = async (req: Request, res: Response, next: NextFunction) => {
-    const { productId } = req.params;
+    const { productId } = req.body;
     const _req = req as AuthRequest;
     try {
         const { _id: userId, isAccessTokenExp } = _req
@@ -254,8 +370,33 @@ const removeFromCart = async (req: Request, res: Response, next: NextFunction) =
 
         cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0);
         cart.totalAmount = cart.items.reduce((total, item) => {
-            const itemPrice = product.price - product.salePrice;
+            // const itemPrice = product.price - product.salePrice;
+            const productCurrency = product.currency
+            let currencyConvertMultiplier
+            // converting into dolar
+            switch (productCurrency) {
+                case "INR":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                case "USD":
+                    currencyConvertMultiplier = 1
+                    break;
+                case "EUR":
+                    currencyConvertMultiplier = 1.19
+                    break;
+                case "GBP":
+                    currencyConvertMultiplier = 1.29
+                    break;
+                case "RUB":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                default:
+                    currencyConvertMultiplier = 1
+                    break
+            }
+            const itemPrice = Number(((product.price - product.salePrice) * currencyConvertMultiplier).toFixed(2));
             return total + (itemPrice * item.quantity);
+            // return total + (itemPrice * item.quantity);
         }, 0);
 
         await cart.save();
@@ -299,6 +440,7 @@ const getCart = async (req: Request, res: Response, next: NextFunction) => {
         res.status(200).json({
             success: true,
             cart,
+            isAccessTokenExp,
             accessToken: isAccessTokenExp ? accessToken : undefined,
         });
 
