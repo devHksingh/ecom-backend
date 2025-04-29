@@ -270,10 +270,39 @@ const getStatusmultipleProduct = async (req: Request, res: Response, next: NextF
             return
 
         }
+        const totalItems = validProducts.reduce((total, item) => total + item.quantity, 0)
+        const totalPriceInDollar = validProducts.reduce((total, item) => {
+            const productCurrency = item.product.currency
+            let currencyConvertMultiplier
+            switch (productCurrency) {
+                case "INR":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                case "USD":
+                    currencyConvertMultiplier = 1
+                    break;
+                case "EUR":
+                    currencyConvertMultiplier = 1.19
+                    break;
+                case "GBP":
+                    currencyConvertMultiplier = 1.29
+                    break;
+                case "RUB":
+                    currencyConvertMultiplier = 0.011
+                    break;
+                default:
+                    currencyConvertMultiplier = 1
+                    break
+            }
+            const itemPrice = Number(((item.product.price - item.product.salePrice) * currencyConvertMultiplier).toFixed(2));
+            return total + (itemPrice * item.quantity);
+        }, 0)
         res.status(200).json({
             success: true,
             validProducts,
             invalidProducts,
+            totalItems,
+            totalPriceInDollar,
             isAccessTokenExp,
             accessToken: isAccessTokenExp ? accessToken : undefined
         })
