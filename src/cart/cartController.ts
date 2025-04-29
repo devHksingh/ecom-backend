@@ -168,7 +168,7 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
 
             // Update quantity
 
-            cart.items[itemIndex].quantity += quantity
+            cart.items[itemIndex].quantity = quantity
             // recalculate totals
             cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0)
             // cart.totalAmount = cart.items.reduce((total, item) => {
@@ -206,12 +206,13 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
             }, 0);
             await cart.save()
             // update stock quantity
-            product.totalStock -= quantity
-            await product.save()
+            // product.totalStock -= quantity
+            // await product.save()
             res.status(200).json({
                 success: true,
                 message: 'Product quantity increased successfully',
                 cart,
+                isAccessTokenExp,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
             });
 
@@ -258,14 +259,16 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
                     // return total + (itemPrice * item.quantity);
                 }, 0);
                 await cart.save()
-                product.totalStock += quantity
-                await product.save()
+                // product.totalStock += quantity
+                // await product.save()
                 res.status(200).json({
                     success: true,
                     message: 'Product remove from cart successfully',
                     cart,
+                    isAccessTokenExp,
                     accessToken: isAccessTokenExp ? accessToken : undefined,
                 });
+                return
             }
             await cart.save()
             // recalculate totals
@@ -304,12 +307,13 @@ const updateCartQuantity = async (req: Request, res: Response, next: NextFunctio
                 // return total + (itemPrice * item.quantity);
             }, 0);
             await cart.save()
-            product.totalStock += quantity
-            await product.save()
+            // product.totalStock += quantity
+            // await product.save()
             res.status(200).json({
                 success: true,
                 message: 'Product quantity decreased successfully',
                 cart,
+                isAccessTokenExp,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
             });
 
