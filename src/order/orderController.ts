@@ -116,6 +116,7 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
                 success: true,
                 message: 'Order placed successfully',
                 order: orderResponse,
+                isAccessTokenExp,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
             });
 

@@ -8,7 +8,7 @@ const cartRouter = express.Router()
 cartRouter.post('/addCartProduct', authenticate, addToCart)
 cartRouter.post('/multilpeProductAddToCart', authenticate, multipleProductAddToCart)
 cartRouter.post('/updateCartProduct', authenticate, updateCartQuantity)
-cartRouter.delete('/removeFromCart/:productId', authenticate, removeFromCart)
+cartRouter.post('/removeFromCart', authenticate, removeFromCart)
 cartRouter.get('/getCart', authenticate, getCart)
 
 export default cartRouter
