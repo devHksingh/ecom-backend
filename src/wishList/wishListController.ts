@@ -25,7 +25,7 @@ const addToWishlist = async (req: Request, res: Response, next: NextFunction) =>
     */
     const _req = req as AuthRequest
     const userId = _req._id
-    const productId = req.params.productId
+    const {productId} = req.body
     const isAccessTokenExp = _req.isAccessTokenExp
 
     try {
@@ -109,6 +109,7 @@ const getWishlist = async (req: Request, res: Response, next: NextFunction) => {
                 success: true,
                 message: "Wishlist is empty",
                 wishlist: null,
+                isAccessTokenExp,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
             });
             return
@@ -117,6 +118,7 @@ const getWishlist = async (req: Request, res: Response, next: NextFunction) => {
         res.status(200).json({
             success: true,
             wishlist,
+            isAccessTokenExp,
             accessToken: isAccessTokenExp ? accessToken : undefined,
         });
 
@@ -138,7 +140,7 @@ const removeWishlist = async (req: Request, res: Response, next: NextFunction) =
         const _req = req as AuthRequest
         const userId = _req._id
         const isAccessTokenExp = _req.isAccessTokenExp
-        const productId = req.params.productId
+        const {productId} = req.body
 
 
         if (!productId) {
@@ -173,6 +175,7 @@ const removeWishlist = async (req: Request, res: Response, next: NextFunction) =
                 success: false,
                 message: "Wishlist is empty",
                 wishlist: null,
+                isAccessTokenExp,
                 accessToken: isAccessTokenExp ? accessToken : undefined,
             });
             return
@@ -189,6 +192,7 @@ const removeWishlist = async (req: Request, res: Response, next: NextFunction) =
             success: true,
             message: "Product removed from wishlist",
             wishList,
+            isAccessTokenExp,
             accessToken: isAccessTokenExp ? accessToken : undefined,
         });
     } catch (error) {
