@@ -205,6 +205,85 @@ const getSingleProduct = async (req: Request, res: Response, next: NextFunction)
     }
 }
 
+const getStatusmultipleProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const products = (req.body);
+        const isValidRequest = Array.isArray(products)
+        if (!isValidRequest) {
+            next(createHttpError(400, "Not valid request"))
+            return
+        }
+        if (products.length === 0) {
+            next(createHttpError(400, "Need products details"))
+            return
+        }
+        const _req = req as AuthRequest;
+        const { _id: userId, isAccessTokenExp } = _req;
+        let accessToken = "";
+
+        // Validate user
+        const user = await User.findById(userId);
+        if (!user) {
+            next(createHttpError(404, 'User not found'));
+            return;
+        }
+        if (!user.isLogin) {
+            next(createHttpError(401, 'Unauthorized. You have to login first.'));
+            return;
+        }
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken();
+        }
+        const validProducts: { product: Products, quantity: number }[] = []
+        const invalidProducts: { product: Products | undefined, quantity: number, reason: string }[] = []
+        for (const item of products) {
+            const { productId, quantity } = item
+            const product = await Product.findById(productId);
+
+            if (!product) {
+                invalidProducts.push({ product: undefined, quantity, reason: 'Product not found' });
+                continue;
+            }
+
+            if (product.totalStock < quantity) {
+                invalidProducts.push({
+                    product,
+                    quantity,
+                    reason: "Not enough stock available"
+                });
+                continue;
+            }
+
+            validProducts.push({ product, quantity });
+
+
+        }
+        // If there are invalid products, return error
+        if (invalidProducts.length === products.length) {
+            res.status(400).json({
+                success: false,
+                message: 'Products could not be added to cart',
+                invalidProducts,
+                isAccessTokenExp,
+                accessToken: isAccessTokenExp ? accessToken : undefined
+            });
+            return
+
+        }
+        res.status(200).json({
+            success: true,
+            validProducts,
+            invalidProducts,
+            isAccessTokenExp,
+            accessToken: isAccessTokenExp ? accessToken : undefined
+        })
+        return
+    } catch (error) {
+        next(createHttpError(500, "Error while getting product"))
+    }
+}
+
+
 const updateProduct = async (req: Request, res: Response, next: NextFunction) => {
     /*
     Steps:
@@ -855,5 +934,6 @@ export {
     getAllProductsWithLimits,
     getAllCategoryName,
     product,
-    customizeProduct
+    customizeProduct,
+    getStatusmultipleProduct
 }
