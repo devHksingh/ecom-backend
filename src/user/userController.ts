@@ -468,7 +468,7 @@ const updateAddress = async (req: Request, res: Response, next: NextFunction) =>
         const { _id, isAccessTokenExp } = _req
         // zod validation
         const isValidUserDetails = userAddressSchema.parse(req.body)
-        const { address, pinCode } = isValidUserDetails
+        const { address, pinCode,phoneNumber } = isValidUserDetails
         const user = await User.findById(_id).select("-password -refreshToken")
         if (!user) {
             return next(createHttpError(404, 'Unauthorize request .No user Found'))
@@ -479,6 +479,8 @@ const updateAddress = async (req: Request, res: Response, next: NextFunction) =>
         user.address = address
         await user.save({ validateModifiedOnly: true })
         user.pinCode = pinCode
+        await user.save({ validateModifiedOnly: true })
+        user.phoneNumber = phoneNumber
         await user.save({ validateModifiedOnly: true })
         let newAccessToken = ""
         if (isAccessTokenExp) {
