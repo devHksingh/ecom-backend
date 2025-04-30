@@ -52,8 +52,8 @@ const userSchema = new mongoose.Schema<Users>({
     },
     address: {
         type: String,
-        default: "BLDG 88,Khare Street,10, Aadil Society, AtulPur,Gujarat",
-        maxlength: 200,
+        default: "DUMMY ADDRESS",
+        maxlength: 400,
         trim: true
     },
     pinCode: {
