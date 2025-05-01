@@ -7,7 +7,8 @@ import { Product } from '../product/productModel';
 import { User } from '../user/userModel';
 import { v4 as uuidv4 } from 'uuid';
 import { Order } from './orderModel';
-import { log } from 'node:console';
+import { InvalidProductsProps, OrderProductRequest, ValidProductsProps } from './orderTypes';
+import { Products } from '../product/productTypes';
 
 
 
@@ -126,6 +127,150 @@ const placeOrder = async (req: Request, res: Response, next: NextFunction) => {
             next(createHttpError(401, { message: { type: "Validation error", zodError: error.errors } }))
         }
         next(createHttpError(500, "Error placing order"));
+    }
+}
+
+
+const placeMultipleOrder = async (req: Request, res: Response, next: NextFunction) => {
+    /*
+        * Creates orders for multiple products at once
+        * Updates product stock automatically for each product
+        * Includes user and product information in the response
+        * Generates unique tracking ID for each order
+        * Includes error handling
+        * Validates stock availability for each product
+        * Authenticates user access to order details
+        * Formats response data cleanly
+    */
+    try {
+        const products: OrderProductRequest[] = (req.body);
+        const isValidRequest = Array.isArray(products);
+        if (!isValidRequest) {
+            return next(createHttpError(400, "Not valid request"));
+        }
+        if (products.length === 0) {
+            return next(createHttpError(400, "Need products details"));
+        }
+
+        const _req = req as AuthRequest;
+        const userId = _req._id;
+        const isAccessTokenExp = _req.isAccessTokenExp;
+
+
+        // Validate user
+        const user = await User.findById(userId).select("-password -refreshToken");
+        if (!user) {
+            return next(createHttpError(404, 'User not found'));
+        }
+        if (!user.isLogin) {
+            return next(createHttpError(401, 'Unauthorized. You have to login first.'));
+        }
+
+
+        // Validate each product and prepare order data
+        const orderPromises = [];
+        const productUpdates = [];
+        const ordersResponse = [];
+        const invalidProducts: InvalidProductsProps[] = []
+        const validProducts: ValidProductsProps[] = []
+
+        for (const item of products) {
+            const { productId, quantity } = item
+            const product = await Product.findById(productId)
+            // Find product in database to verify
+            if (!product) {
+                return next(createHttpError(404, `Product not found: ${productId}`));
+            }
+            // Check stock availability
+            if (product.totalStock < quantity) {
+                invalidProducts.push({ product, quantity, reason: `Not enough stock available for ${product.title}.` })
+            } else {
+                validProducts.push({ product, quantity })
+            }
+            // Generate tracking ID
+            const id = uuidv4();
+            const trackingId = `ORD-${id}`;
+        }
+
+        // Placing order only for  valid Products 
+        for (const item of validProducts) {
+            // Calculate prices
+            const totalPrice = (item.product.price - item.product.salePrice) * item.quantity;
+            const productPrice = item.product.price - item.product.salePrice;
+            // Generate tracking ID
+            const id = uuidv4();
+            const trackingId = `ORD-${id}`;
+            // Create order object
+            const quantity = item.quantity
+            const orderData = {
+                productDetail: {
+                    name: item.product.title,
+                    price: productPrice,
+                    imageUrl: item.product.image,
+                    productId: item.product._id,
+                    currency: item.product.currency
+                },
+                userDetails: {
+                    userName: user.name,
+                    userEmail: user.email
+                },
+                quantity,
+                totalPrice,
+                trackingId,
+                orderStatus: "PROCESSED",
+                orderPlaceOn: Date.now()
+            };
+            const newOrder = await Order.create(orderData)
+            if (newOrder) {
+                await Product.findByIdAndUpdate(item.product._id, {
+                    $inc: { totalStock: -quantity }
+                })
+                // Format response data
+                ordersResponse.push({
+                    trackingId,
+                    orderStatus: "PROCESSED",
+                    orderPlaceOn: new Date(),
+                    userName: user.name,
+                    userAddress: user.address,
+                    userPhoneNumber: user.phoneNumber,
+                    userPinCode: user.pinCode,
+                    userEmail: user.email,
+                    productDetails: {
+                        id: item.product._id,
+                        title: item.product.title,
+                        price: item.product.price,
+                        image: item.product.image,
+                        category: item.product.category,
+                        discountPrice: item.product.salePrice,
+                        currency: item.product.currency
+                    },
+                    quantity,
+                    totalPrice
+                });
+            }
+        }
+        // Handle access token expiration
+        let accessToken;
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken();
+        }
+
+        // Return successful response
+        res.status(200).json({
+            success: true,
+            message: 'Orders placed successfully',
+            orders: ordersResponse,
+            invalidProducts,
+            validProducts,
+            isAccessTokenExp,
+            accessToken: isAccessTokenExp ? accessToken : undefined,
+        });
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return next(createHttpError(401, { message: { type: "Validation error", zodError: error.errors } }));
+        }
+        return next(createHttpError(500, "Error placing multiple orders"));
     }
 }
 
@@ -317,7 +462,7 @@ const getOrderByUserId = async (req: Request, res: Response, next: NextFunction)
         if (!user.isLogin) {
             return next(createHttpError(400, 'You have to login First!'))
         }
-        const order = await Order.find({ "userDetails.userEmail":user.email })
+        const order = await Order.find({ "userDetails.userEmail": user.email })
         let accessToken
         if (isAccessTokenExp) {
             accessToken = user.generateAccessToken()
@@ -754,5 +899,6 @@ export {
     getOrderByUserEmail,
     getgraphData,
     getAllOrderByLimitAndSkip,
-    getOrderByTrackingId
+    getOrderByTrackingId,
+    placeMultipleOrder
 }
