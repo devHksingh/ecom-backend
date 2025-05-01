@@ -1,3 +1,5 @@
+import { Products } from "../product/productTypes"
+
 export interface Orders {
     orderStatus: string,
     trackingId: string,
@@ -15,4 +17,20 @@ export interface Orders {
     },
     userDetails: {},
     createdAt: string
+}
+
+export interface OrderProductRequest {
+    productId: Products,
+    quantity: number,
+}
+
+export interface InvalidProductsProps {
+    product: Products,
+    quantity: number,
+    reason: string
+}
+
+export interface ValidProductsProps{
+    product: Products,
+    quantity: number,
 }
