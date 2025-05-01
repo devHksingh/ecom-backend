@@ -1,10 +1,11 @@
 import express from 'express'
 import authenticate from '../middlewares/authMiddleware'
-import { getAllOrder, getAllOrderByLimitAndSkip, getgraphData, getOrderByTrackingId, getOrderByUserEmail, getOrderByUserId, getSingleOrder, placeOrder, updateOrderStatus } from './orderController'
+import { getAllOrder, getAllOrderByLimitAndSkip, getgraphData, getOrderByTrackingId, getOrderByUserEmail, getOrderByUserId, getSingleOrder, placeMultipleOrder, placeOrder, updateOrderStatus } from './orderController'
 
 const orderRouter = express.Router()
 
 orderRouter.post('/placeOrder', authenticate, placeOrder)
+orderRouter.post('/placeMultipleOrder', authenticate, placeMultipleOrder)
 orderRouter.post('/updateOrderStatus', authenticate, updateOrderStatus)
 orderRouter.post('/getgraphData',authenticate,getgraphData)
 orderRouter.get('/getAllOrder', authenticate, getAllOrder)
