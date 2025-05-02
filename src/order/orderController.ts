@@ -228,6 +228,7 @@ const placeMultipleOrder = async (req: Request, res: Response, next: NextFunctio
                 // Format response data
                 ordersResponse.push({
                     trackingId,
+                    orderId:newOrder._id,
                     orderStatus: "PROCESSED",
                     orderPlaceOn: new Date(),
                     userName: user.name,
