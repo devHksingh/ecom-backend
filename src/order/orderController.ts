@@ -456,14 +456,14 @@ const getOrderByUserId = async (req: Request, res: Response, next: NextFunction)
         const userId = _req._id
         const isAccessTokenExp = _req.isAccessTokenExp
         //    verify user
-        const user = await User.findById(userId)
+        const user = await User.findById(userId).select('-password -refreshToken')
         if (!user) {
             return next(createHttpError(401, "Invalid request. User not found"));
         }
         if (!user.isLogin) {
             return next(createHttpError(400, 'You have to login First!'))
         }
-        const order = await Order.find({ "userDetails.userEmail": user.email })
+        const order = await Order.find({ "userDetails.userEmail": user.email }).sort({ orderPlaceOn: -1 })
         let accessToken
         if (isAccessTokenExp) {
             accessToken = user.generateAccessToken()
@@ -510,7 +510,7 @@ const getOrderByUserEmail = async (req: Request, res: Response, next: NextFuncti
         if (user.role !== "admin" && user.role !== "manager") {
             return next(createHttpError(400, 'Unauthorerize request'))
         }
-        const customer = await User.findOne({ email: customerEmail }).select('-password')
+        const customer = await User.findOne({ email: customerEmail }).select('-password -refreshToken')
         if (!customer) {
             return next(createHttpError(400, 'No user Found'))
         }
