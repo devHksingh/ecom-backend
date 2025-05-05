@@ -97,7 +97,7 @@ const getWishlist = async (req: Request, res: Response, next: NextFunction) => {
         }
         const wishlist = await Wishlist.findOne({ user: userId }).populate({
             path: "products",
-            select: "title price salePrice image totalStock"
+            select: "title price salePrice image totalStock currency"
         })
         // genrate accessToken if expired
         let accessToken
