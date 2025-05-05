@@ -49,13 +49,13 @@ app.use(express.urlencoded({ extended: true }))
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     // TODO: CHANGE TO 120 request in production
-    limit: 400, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+    limit: 120, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
     message: "Too many request from this IP ,please try later",
 });
 
 // security middleware
 app.use(helmet());
-app.use("/api", limiter);
+app.use("/api/v1/users/login", limiter);
 app.use(mongoSanitize());
 app.use(hpp())
 
