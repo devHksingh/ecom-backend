@@ -5,6 +5,7 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 import { User } from '../user/userModel';
 import createHttpError from 'http-errors';
 import { Product } from '../product/productModel';
+import { Products } from '../product/productTypes';
 
 
 const findOrCreateWishlist = async (userId: mongoose.Schema.Types.ObjectId) => {
@@ -25,7 +26,7 @@ const addToWishlist = async (req: Request, res: Response, next: NextFunction) =>
     */
     const _req = req as AuthRequest
     const userId = _req._id
-    const {productId} = req.body
+    const { productId } = req.body
     const isAccessTokenExp = _req.isAccessTokenExp
 
     try {
@@ -58,7 +59,7 @@ const addToWishlist = async (req: Request, res: Response, next: NextFunction) =>
 
         const populatedWishlist = await Wishlist.findById(wishList.id).populate({
             path: "products",
-            select: "title price salePrice image totalStock"
+            select: "title price salePrice image totalStock currency description totalStock brand category salePrice createdAt updatedAt"
         })
         // genrate accessToken if expired
         let accessToken
@@ -70,8 +71,79 @@ const addToWishlist = async (req: Request, res: Response, next: NextFunction) =>
             success: true,
             message: "Product added to wishlist",
             wishlist: populatedWishlist,
+            isAccessTokenExp,
             accessToken: isAccessTokenExp ? accessToken : undefined,
         });
+    } catch (error) {
+        return next(createHttpError(500, "Error adding to wishlist"));
+    }
+
+}
+
+const multipleProductAddToWishList = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const products = (req.body);
+        const isValidRequest = Array.isArray(products)
+        if (!isValidRequest) {
+            next(createHttpError(400, "Not valid request"))
+            return
+        }
+        const _req = req as AuthRequest;
+        const { _id: userId, isAccessTokenExp } = _req;
+        let accessToken = "";
+    
+        // Validate user
+        const user = await User.findById(userId);
+        if (!user) {
+            next(createHttpError(404, 'User not found'));
+            return;
+        }
+        if (!user.isLogin) {
+            next(createHttpError(401, 'Unauthorized. You have to login first.'));
+            return;
+        }
+        if (isAccessTokenExp) {
+            accessToken = user.generateAccessToken();
+        }
+        // Find or create wishlist
+        const wishList = await findOrCreateWishlist(user.id)
+        const invalidProducts: any[] = [];
+        const productsToUpdate: { product: Products }[] = [];
+        for (const item of products) {
+            const { id } = item;
+            const product = await Product.findById(id);
+    
+            if (!product) {
+                invalidProducts.push({ id, reason: 'Product not found' });
+                continue;
+            }
+            // Add product if ist not in wishlist
+    
+            if (!wishList.products.includes(product.id)) {
+                wishList.products.push(product.id)
+                await wishList.save()
+                productsToUpdate.push({product})
+            }
+        }
+        // If there are invalid products, return error
+        if (invalidProducts.length === products.length) {
+            res.status(400).json({
+                success: false,
+                message: 'Products could not be added to wishList',
+                invalidProducts,
+                isAccessTokenExp,
+                accessToken: isAccessTokenExp ? accessToken : undefined
+            });
+            return;
+        }
+         res.status(200).json({
+            success: true,
+            message: "Product added to wishlist",
+            wishlist: productsToUpdate,
+            isAccessTokenExp,
+            accessToken: isAccessTokenExp ? accessToken : undefined,
+        });
+        return
     } catch (error) {
         return next(createHttpError(500, "Error adding to wishlist"));
     }
@@ -97,7 +169,7 @@ const getWishlist = async (req: Request, res: Response, next: NextFunction) => {
         }
         const wishlist = await Wishlist.findOne({ user: userId }).populate({
             path: "products",
-            select: "title price salePrice image totalStock currency"
+            select: "title price salePrice image totalStock currency description totalStock brand category salePrice createdAt updatedAt"
         })
         // genrate accessToken if expired
         let accessToken
@@ -140,7 +212,7 @@ const removeWishlist = async (req: Request, res: Response, next: NextFunction) =
         const _req = req as AuthRequest
         const userId = _req._id
         const isAccessTokenExp = _req.isAccessTokenExp
-        const {productId} = req.body
+        const { productId } = req.body
 
 
         if (!productId) {
@@ -203,5 +275,6 @@ const removeWishlist = async (req: Request, res: Response, next: NextFunction) =
 export {
     addToWishlist,
     getWishlist,
-    removeWishlist
+    removeWishlist,
+    multipleProductAddToWishList
 }
