@@ -91,7 +91,7 @@ const multipleProductAddToWishList = async (req: Request, res: Response, next: N
         const _req = req as AuthRequest;
         const { _id: userId, isAccessTokenExp } = _req;
         let accessToken = "";
-    
+
         // Validate user
         const user = await User.findById(userId);
         if (!user) {
@@ -108,21 +108,21 @@ const multipleProductAddToWishList = async (req: Request, res: Response, next: N
         // Find or create wishlist
         const wishList = await findOrCreateWishlist(user.id)
         const invalidProducts: any[] = [];
-        const productsToUpdate: { product: Products }[] = [];
+        // const productsToUpdate: Products[] = [];
         for (const item of products) {
             const { id } = item;
             const product = await Product.findById(id);
-    
+
             if (!product) {
                 invalidProducts.push({ id, reason: 'Product not found' });
                 continue;
             }
             // Add product if ist not in wishlist
-    
+
             if (!wishList.products.includes(product.id)) {
                 wishList.products.push(product.id)
                 await wishList.save()
-                productsToUpdate.push({product})
+
             }
         }
         // If there are invalid products, return error
@@ -136,14 +136,41 @@ const multipleProductAddToWishList = async (req: Request, res: Response, next: N
             });
             return;
         }
-         res.status(200).json({
+        //  get final updated wishlist product
+        const populatedWishlist = await Wishlist.findById(wishList.id).populate({
+            path: "products",
+            select: "title price salePrice image totalStock currency description totalStock brand category salePrice createdAt updatedAt"
+        })
+        res.status(200).json({
             success: true,
             message: "Product added to wishlist",
-            wishlist: productsToUpdate,
+            wishlist: populatedWishlist,
             isAccessTokenExp,
             accessToken: isAccessTokenExp ? accessToken : undefined,
         });
         return
+        // if (productsToUpdate.length === 0) {
+        //     populatedWishlist = await Wishlist.findById(wishList.id).populate({
+        //         path: "products",
+        //         select: "title price salePrice image totalStock currency description totalStock brand category salePrice createdAt updatedAt"
+        //     })
+        //     res.status(200).json({
+        //         success: true,
+        //         message: "Product added to wishlist",
+        //         wishlist: populatedWishlist,
+        //         isAccessTokenExp,
+        //         accessToken: isAccessTokenExp ? accessToken : undefined,
+        //     });
+        //     return
+        // }
+        // res.status(200).json({
+        //     success: true,
+        //     message: "Product added to wishlist",
+        //     wishlist: { products: productsToUpdate },
+        //     isAccessTokenExp,
+        //     accessToken: isAccessTokenExp ? accessToken : undefined,
+        // });
+        // return
     } catch (error) {
         return next(createHttpError(500, "Error adding to wishlist"));
     }
