@@ -11,7 +11,7 @@
     "api",
     "express"
   ],
-  "author": "harshit kumar singh",
+  "author": "harshit ",
   "license": "ISC",
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

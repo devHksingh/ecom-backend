@@ -59,7 +59,9 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
             email
         })
         if (user) {
-            if (user.isLogin) {
+            const allowedEmails = ["manager1@test.com", "admin@test.com"]
+            // allowed one admin and one manager have multiple login 
+            if (user.isLogin && !allowedEmails.includes(user.email)) {
                 const err = createHttpError(401, "User is already login")
                 return next(err)
             }
@@ -468,7 +470,7 @@ const updateAddress = async (req: Request, res: Response, next: NextFunction) =>
         const { _id, isAccessTokenExp } = _req
         // zod validation
         const isValidUserDetails = userAddressSchema.parse(req.body)
-        const { address, pinCode,phoneNumber } = isValidUserDetails
+        const { address, pinCode, phoneNumber } = isValidUserDetails
         const user = await User.findById(_id).select("-password -refreshToken")
         if (!user) {
             return next(createHttpError(404, 'Unauthorize request .No user Found'))
